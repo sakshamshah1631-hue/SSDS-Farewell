@@ -649,7 +649,7 @@ function App() {
             <div className="hero-actions"><button className="button button-dark" onClick={scrollToShop}>Shop our candles <ArrowRight size={16} /></button><button className="text-button" onClick={() => navigate('fragrances')}>Explore fragrances <ArrowRight size={16} /></button></div>
             <div className="hero-note"><span className="note-line" /> <span>Handcrafted in small batches<br /><strong>by Harshali V. Mehta</strong></span></div>
           </div>
-          <div className="hero-image-wrap"><img src="https://images.pexels.com/photos/6101288/pexels-photo-6101288.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sahyadri Glow botanical scented candle surrounded by eucalyptus and warm light" width="650" height="812" fetchPriority="high" decoding="async" /><div className="hero-image-caption"><span>01</span><span>Find your quiet glow</span></div></div>
+          <div className="hero-image-wrap"><img src="https://images.pexels.com/photos/6101288/pexels-photo-6101288.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sahyadri Glow botanical scented candle surrounded by eucalyptus and warm light" width="650" height="812" loading="lazy" decoding="async" /><div className="hero-image-caption"><span>01</span><span>Find your quiet glow</span></div></div>
         </section>
 
         <section id="fragrances" className="intro-section section-padding">

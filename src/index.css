@@ -3273,6 +3273,9 @@ input, textarea, select {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
 }
 
 /* ── Loading overlay ─────────────────────────────────────── */
