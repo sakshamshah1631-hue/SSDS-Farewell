@@ -622,13 +622,22 @@ function App() {
       {isSearchOpen && <div className="search-bar"><Search size={18} /><input autoFocus value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search your next ritual..." /><button onClick={() => { setSearchQuery(''); setIsSearchOpen(false); }} aria-label="Clear search"><X size={18} /></button></div>}
 
       <main id="top">
-        {/* Scrollytelling sequential frame animation video intro */}
+        {/* Scrollytelling sequential frame animation video intro (responsive: 9:16 mobile / 16:9 PC) */}
         <ScrollyCanvas
-          frameCount={101}
-          framePrefix="/frames/Candle_products_video_intro_5171c673-"
-          frameExtension="jpg"
-          padLength={4}
+          desktopConfig={{
+            frameCount: 101,
+            framePrefix: "/frames/Candle_products_video_intro_5171c673-",
+            frameExtension: "jpg",
+            padLength: 4,
+          }}
+          mobileConfig={{
+            frameCount: 101,
+            framePrefix: "/frames-mobile/Candle_website_intro_video_664012b1-",
+            frameExtension: "jpg",
+            padLength: 4,
+          }}
           scrollMultiplier={4}
+          onExploreClick={scrollToShop}
         />
 
         <section className="hero-section">
@@ -860,13 +869,16 @@ function ProductCard({ product, onSelect, onAdd, compact = false }: { product: P
       )}
     </div>
     <div className="product-info">
-      <div><h3>{product.name}</h3><p>{product.description}</p></div>
+      <div><h3>{product.name}</h3><p className="product-card-desc">{product.description}</p></div>
       <div className="product-meta">
         <div className="product-pricing">
           <s className="price-real">₹{realPrice.toLocaleString('en-IN')}</s>
           <span className="price-sale">₹{salePrice.toLocaleString('en-IN')}</span>
         </div>
-        <button onClick={() => onSelect(product)} aria-label={`Add or customise ${product.name}`}><Plus size={17} /></button>
+        <button className="product-add-button" onClick={() => onSelect(product)} aria-label={`Add or customise ${product.name}`}>
+          <Plus size={15} />
+          <span className="add-btn-label">Add</span>
+        </button>
       </div>
     </div>
   </article>;

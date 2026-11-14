@@ -1,42 +1,91 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+
+export interface FrameConfig {
+  frameCount: number;
+  framePrefix: string;
+  frameExtension: string;
+  padLength?: number;
+}
 
 interface ScrollyCanvasProps {
-  frameCount: number;
-  framePrefix: string;    // e.g. "/frames/Candle_products_video_intro_5171c673-"
-  frameExtension: string; // e.g. "jpg"
-  /** Number of digits for zero-padding frame index (default: 4) */
+  desktopConfig?: FrameConfig;
+  mobileConfig?: FrameConfig;
+  // Fallback direct props for backward compatibility
+  frameCount?: number;
+  framePrefix?: string;
+  frameExtension?: string;
   padLength?: number;
-  /** vh multiplier for scroll length (e.g. 5 means 500vh of scroll distance) */
   scrollMultiplier?: number;
+  onExploreClick?: () => void;
 }
 
 function padNum(n: number, len: number): string {
   return String(n).padStart(len, '0');
 }
 
-const ScrollyCanvas: React.FC<ScrollyCanvasProps> = ({
-  frameCount,
-  framePrefix,
-  frameExtension,
-  padLength = 4,
-  scrollMultiplier = 6, // 6× viewport height for deliberate, cinema-quality scrubbing
+const DEFAULT_DESKTOP: FrameConfig = {
+  frameCount: 101,
+  framePrefix: '/frames/Candle_products_video_intro_5171c673-',
+  frameExtension: 'jpg',
+  padLength: 4,
+};
+
+const DEFAULT_MOBILE: FrameConfig = {
+  frameCount: 101,
+  framePrefix: '/frames-mobile/Candle_website_intro_video_664012b1-',
+  frameExtension: 'jpg',
+  padLength: 4,
+};
+
+export const ScrollyCanvas: React.FC<ScrollyCanvasProps> = ({
+  desktopConfig = DEFAULT_DESKTOP,
+  mobileConfig = DEFAULT_MOBILE,
+  frameCount: propCount,
+  framePrefix: propPrefix,
+  frameExtension: propExt,
+  padLength: propPad,
+  scrollMultiplier = 4,
+  onExploreClick,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const currentFrameRef = useRef(0);
   const rafRef = useRef<number | null>(null);
+  const lastDimensionsRef = useRef<{ w: number; h: number }>({ w: 0, h: 0 });
+
+  // Detect mobile device or vertical 9:16 screen ratio
+  const [isMobile, setIsMobile] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth <= 768 || window.innerHeight > window.innerWidth;
+  });
+
+  const activeConfig = useMemo(() => {
+    // If specific props were passed directly and configs weren't overridden, use them
+    if (propCount && propPrefix && propExt) {
+      if (isMobile && mobileConfig) return mobileConfig;
+      return {
+        frameCount: propCount,
+        framePrefix: propPrefix,
+        frameExtension: propExt,
+        padLength: propPad ?? 4,
+      };
+    }
+    return isMobile ? mobileConfig : desktopConfig;
+  }, [isMobile, mobileConfig, desktopConfig, propCount, propPrefix, propExt, propPad]);
 
   const [loadedCount, setLoadedCount] = useState(0);
   const [allLoaded, setAllLoaded] = useState(false);
+  const [hasStartedDrawing, setHasStartedDrawing] = useState(false);
   const [overlayText, setOverlayText] = useState<string>('');
+  const [scrollProgress, setScrollProgress] = useState(0);
 
-  // Subtle poetic captions timed with frame milestones
+  // Poetic captions timed with frame milestones
   const overlayMilestones: Array<{ start: number; end: number; text: string }> = [
-    { start: 0,  end: 25,  text: 'Handcrafted with love.' },
-    { start: 26, end: 55,  text: 'Scents that tell stories.' },
-    { start: 56, end: 85,  text: 'Find your quiet glow.' },
-    { start: 86, end: 101, text: 'The Sahyadri collection.' },
+    { start: 0, end: 25, text: 'Handcrafted with love.' },
+    { start: 26, end: 55, text: 'Scents that tell stories.' },
+    { start: 56, end: 82, text: 'Find your quiet glow.' },
+    { start: 83, end: 101, text: 'The Sahyadri collection.' },
   ];
 
   // ── High-DPI Cover Draw function ──────────────────────────────────────────
@@ -49,17 +98,29 @@ const ScrollyCanvas: React.FC<ScrollyCanvasProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Use high DPI buffer
+    // Use High-DPI buffer up to 2x for retina sharpness without excessive memory
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const displayWidth = canvas.clientWidth || window.innerWidth;
     const displayHeight = canvas.clientHeight || window.innerHeight;
 
-    if (canvas.width !== Math.round(displayWidth * dpr) || canvas.height !== Math.round(displayHeight * dpr)) {
-      canvas.width = Math.round(displayWidth * dpr);
-      canvas.height = Math.round(displayHeight * dpr);
+    // Gracefully handle mobile address bar resizing: only resize canvas buffer
+    // if width changes or if height change exceeds 75px (address bar threshold)
+    const prev = lastDimensionsRef.current;
+    const widthChanged = Math.abs(prev.w - displayWidth) > 2;
+    const heightChanged = Math.abs(prev.h - displayHeight) > 75;
+
+    if (
+      canvas.width !== Math.round(displayWidth * dpr) ||
+      canvas.height !== Math.round(displayHeight * dpr)
+    ) {
+      if (prev.w === 0 || widthChanged || heightChanged) {
+        canvas.width = Math.round(displayWidth * dpr);
+        canvas.height = Math.round(displayHeight * dpr);
+        lastDimensionsRef.current = { w: displayWidth, h: displayHeight };
+      }
     }
 
-    // Cover calculation (object-fit: cover for canvas)
+    // Cover math (object-fit: cover inside canvas)
     const cw = canvas.width;
     const ch = canvas.height;
     const iw = img.naturalWidth;
@@ -76,100 +137,139 @@ const ScrollyCanvas: React.FC<ScrollyCanvasProps> = ({
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, ox, oy, nw, nh);
     currentFrameRef.current = index;
+    setHasStartedDrawing(true);
 
     // Update overlay text milestone
-    const milestone = overlayMilestones.find(m => index >= m.start && index <= m.end);
+    const milestone = overlayMilestones.find((m) => index >= m.start && index <= m.end);
     setOverlayText(milestone?.text ?? '');
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Resize handler ────────────────────────────────────────────────────────
-  const handleResize = useCallback(() => {
-    drawFrame(currentFrameRef.current);
+  // ── Orientation & Device Detection ────────────────────────────────────────
+  useEffect(() => {
+    const handleDeviceCheck = () => {
+      const mobile = window.innerWidth <= 768 || window.innerHeight > window.innerWidth;
+      setIsMobile((prev) => (prev !== mobile ? mobile : prev));
+      if (canvasRef.current) {
+        drawFrame(currentFrameRef.current);
+      }
+    };
+
+    window.addEventListener('resize', handleDeviceCheck, { passive: true });
+    window.addEventListener('orientationchange', handleDeviceCheck, { passive: true });
+    return () => {
+      window.removeEventListener('resize', handleDeviceCheck);
+      window.removeEventListener('orientationchange', handleDeviceCheck);
+    };
   }, [drawFrame]);
 
-  // ── Scroll handler (robust progress calculation) ──────────────────────────
+  // ── Scroll handler ────────────────────────────────────────────────────────
   const handleScroll = useCallback(() => {
     const outer = outerRef.current;
-    if (!outer || !allLoaded) return;
+    if (!outer) return;
 
     const rect = outer.getBoundingClientRect();
-    // Total distance the outer container travels while pinned
-    const scrollableDistance = outer.offsetHeight - window.innerHeight;
+    const vh = window.innerHeight;
+    const scrollableDistance = outer.offsetHeight - vh;
     if (scrollableDistance <= 0) return;
 
-    // How far the top of the container has scrolled past the top of the viewport
     const scrolled = -rect.top;
     const rawProgress = scrolled / scrollableDistance;
     const progress = Math.max(0, Math.min(1, rawProgress));
+    setScrollProgress(progress);
 
-    const frameIndex = Math.min(Math.floor(progress * frameCount), frameCount - 1);
+    const count = activeConfig.frameCount;
+    const frameIndex = Math.min(Math.floor(progress * count), count - 1);
 
     if (frameIndex !== currentFrameRef.current) {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(() => drawFrame(frameIndex));
     }
-  }, [allLoaded, frameCount, drawFrame]);
+  }, [activeConfig.frameCount, drawFrame]);
 
-  // ── Preload all frames ────────────────────────────────────────────────────
+  // ── Preload active frames sequence ────────────────────────────────────────
   useEffect(() => {
+    let isCancelled = false;
     const images: HTMLImageElement[] = [];
     let loaded = 0;
+    const total = activeConfig.frameCount;
+    const pad = activeConfig.padLength ?? 4;
 
-    for (let i = 1; i <= frameCount; i++) {
+    setLoadedCount(0);
+    setAllLoaded(false);
+
+    for (let i = 1; i <= total; i++) {
       const img = new Image();
-      img.src = `${framePrefix}${padNum(i, padLength)}.${frameExtension}`;
+      img.src = `${activeConfig.framePrefix}${padNum(i, pad)}.${activeConfig.frameExtension}`;
+
       img.onload = () => {
+        if (isCancelled) return;
         loaded += 1;
         setLoadedCount(loaded);
-        if (loaded === frameCount) {
-          setAllLoaded(true);
-          // Draw first frame when all ready
+
+        // Draw initial frame as soon as frame 1 is ready
+        if (loaded === 1 && currentFrameRef.current === 0) {
           drawFrame(0);
         }
+
+        if (loaded === total) {
+          setAllLoaded(true);
+          drawFrame(currentFrameRef.current);
+        }
       };
+
       img.onerror = () => {
+        if (isCancelled) return;
         loaded += 1;
         setLoadedCount(loaded);
-        if (loaded === frameCount) setAllLoaded(true);
+        if (loaded === total) {
+          setAllLoaded(true);
+        }
       };
+
       images.push(img);
     }
 
     imagesRef.current = images;
 
     return () => {
+      isCancelled = true;
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
-  }, [frameCount, framePrefix, frameExtension, padLength, drawFrame]);
+  }, [activeConfig, drawFrame]);
 
   // ── Attach scroll listener ────────────────────────────────────────────────
   useEffect(() => {
-    if (!allLoaded) return;
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [allLoaded, handleScroll]);
+  }, [handleScroll]);
 
-  // ── Attach resize listener ────────────────────────────────────────────────
-  useEffect(() => {
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [handleResize]);
+  const loadPercent = Math.min(
+    100,
+    Math.round((loadedCount / Math.max(1, activeConfig.frameCount)) * 100)
+  );
 
-  const loadPercent = Math.round((loadedCount / frameCount) * 100);
+  // Mobile scroll height multiplier: slightly snappier on mobile for natural thumb-scrubbing
+  const effectiveMultiplier = isMobile
+    ? Math.max(2.5, scrollMultiplier * 0.8)
+    : scrollMultiplier;
 
   return (
     <div
       ref={outerRef}
-      className="scrolly-outer"
-      style={{ height: `${(scrollMultiplier + 1) * 100}vh` }}
-      aria-label="Sahyadri Glow product intro animation"
+      className={`scrolly-outer ${isMobile ? 'is-mobile-view' : 'is-desktop-view'}`}
+      style={{ height: `${(effectiveMultiplier + 1) * 100}vh` }}
+      aria-label="Sahyadri Glow handcrafted candle sequence"
     >
-      {/* Loading overlay */}
-      {!allLoaded && (
+      {/* Luxury Loading Spinner Overlay */}
+      {(!allLoaded || !hasStartedDrawing) && (
         <div className="scrolly-loader-overlay">
           <div className="scrolly-loader-inner">
+            <div className="scrolly-spinner-ring" />
             <p className="scrolly-loader-brand">Sahyadri Glow</p>
+            <p className="scrolly-loader-sub">
+              {isMobile ? 'Pouring mobile experience...' : 'Pouring artisanal candles...'}
+            </p>
             <div className="scrolly-loader-bar-track">
               <div
                 className="scrolly-loader-bar-fill"
@@ -192,11 +292,24 @@ const ScrollyCanvas: React.FC<ScrollyCanvasProps> = ({
           </div>
         )}
 
-        {/* Scroll cue hint */}
-        {allLoaded && (
+        {/* Scroll cue hint / Explore button */}
+        {allLoaded && scrollProgress < 0.9 && (
           <div className="scrolly-hint">
             <span>Scroll to explore</span>
             <span className="scrolly-hint-arrow">↓</span>
+          </div>
+        )}
+
+        {/* Smooth transition button when near end of animation */}
+        {allLoaded && scrollProgress >= 0.85 && onExploreClick && (
+          <div className="scrolly-end-prompt">
+            <button
+              className="scrolly-explore-btn"
+              onClick={onExploreClick}
+              type="button"
+            >
+              Shop Collection ↓
+            </button>
           </div>
         )}
       </div>
