@@ -58,7 +58,6 @@ import {
   productSchema,
 } from '@/lib/validation';
 import { checkRateLimit } from '@/lib/rateLimit';
-import ScrollyCanvas from '@/components/ScrollyCanvas';
 
 type Product = {
   id: string;
@@ -798,24 +797,6 @@ function App() {
       {isSearchOpen && <div className="search-bar"><Search size={18} /><input autoFocus value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search your next ritual..." /><button onClick={() => { setSearchQuery(''); setIsSearchOpen(false); }} aria-label="Clear search"><X size={18} /></button></div>}
 
       <main id="top">
-        {/* Scrollytelling sequential frame animation video intro (responsive: 9:16 mobile / 16:9 PC) */}
-        <ScrollyCanvas
-          desktopConfig={{
-            frameCount: 101,
-            framePrefix: "/frames/Candle_products_video_intro_5171c673-",
-            frameExtension: "jpg",
-            padLength: 4,
-          }}
-          mobileConfig={{
-            frameCount: 101,
-            framePrefix: "/frames-mobile/Candle_website_intro_video_664012b1-",
-            frameExtension: "jpg",
-            padLength: 4,
-          }}
-          scrollMultiplier={4}
-          onExploreClick={scrollToShop}
-        />
-
         <section className="hero-section">
           <div className="hero-copy">
             <div className="hero-logo"><img src={LOGO} alt="Sahyadri Glow Studio Logo" width="140" height="140" fetchPriority="high" /></div>
