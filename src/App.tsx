@@ -7,11 +7,15 @@ import {
   Copy,
   CreditCard,
   Download,
+  Edit3,
   CheckCircle2,
   ExternalLink,
   Eye,
   EyeOff,
   FileSpreadsheet,
+  FileText,
+  FolderHeart,
+  Globe,
   Image as ImageIcon,
   Instagram,
   Lock,
@@ -27,6 +31,7 @@ import {
   QrCode,
   Search,
   RefreshCw,
+  RotateCcw,
   ShieldCheck,
   ShoppingBag,
   Smartphone,
@@ -91,6 +96,129 @@ type CustomerUser = {
   email: string;
   phone?: string;
 };
+
+export type CustomCollection = {
+  id: string;
+  name: string;
+  slug: string;
+  tagline?: string;
+  description: string;
+  productIds: string[];
+  is_published: boolean;
+};
+
+export type SiteContent = {
+  // Announcement
+  announcementText: string;
+  // Hero
+  heroEyebrow: string;
+  heroTitle: string;
+  heroText: string;
+  heroPrimaryBtn: string;
+  heroSecondaryBtn: string;
+  heroFounderNote: string;
+  // Fragrance Wardrobe
+  wardrobeKicker: string;
+  wardrobeTitle: string;
+  wardrobeText: string;
+  wardrobePills: string;
+  wardrobeFooterText: string;
+  // Shop section
+  shopKicker: string;
+  shopTitle: string;
+  // Signature Blends
+  blendKicker: string;
+  blendTitle: string;
+  blendText: string;
+  blendCardEyebrow: string;
+  blendCardTitle: string;
+  blendCardText: string;
+  // Bestsellers
+  bestsellerKicker: string;
+  bestsellerTitle: string;
+  // Story
+  storyKicker: string;
+  storyTitle: string;
+  storyText: string;
+  storyVal1Title: string;
+  storyVal1Text: string;
+  storyVal2Title: string;
+  storyVal2Text: string;
+  storyVal3Title: string;
+  storyVal3Text: string;
+  storyFounderName: string;
+  storyFounderRole: string;
+  // Contact & Social
+  contactKicker: string;
+  contactTitle: string;
+  contactText: string;
+  contactPhone: string;
+  contactEmail: string;
+  instagramHandle: string;
+};
+
+const DEFAULT_SITE_CONTENT: SiteContent = {
+  announcementText: 'Handcrafted with care in the Sahyadri mountains · Thoughtful gifting, beautifully wrapped',
+  heroEyebrow: 'The Sahyadri collection · 01',
+  heroTitle: 'Bring the essence of Sahyadri home.',
+  heroText: 'Thoughtfully crafted scented candles that transform everyday moments into warm, beautiful rituals.',
+  heroPrimaryBtn: 'Shop our candles',
+  heroSecondaryBtn: 'Explore fragrances',
+  heroFounderNote: 'Handcrafted in small batches by Harshali V. Mehta',
+  wardrobeKicker: '01 / Fragrance wardrobe',
+  wardrobeTitle: 'A little luxury for every mood.',
+  wardrobeText: 'From the soft embrace of Vanilla to the grounding depth of Sandalwood, each Sahyadri Glow fragrance is an invitation to slow down, breathe deep and make home feel more like you.',
+  wardrobePills: 'Calm, Warmth, Freshness, Romance, Stillness',
+  wardrobeFooterText: 'Peace, in every mood.',
+  shopKicker: '02 / Shop the collection',
+  shopTitle: 'Made to linger.',
+  blendKicker: '03 / Signature blends',
+  blendTitle: 'Layered like the landscape.',
+  blendText: 'Our blends are composed like a journey — familiar notes meeting unexpected turns, inspired by the many moods of the mountains.',
+  blendCardEyebrow: 'The blend no. 01',
+  blendCardTitle: 'Vanilla + Lavender',
+  blendCardText: 'Creamy comfort meets a quiet botanical heart.',
+  bestsellerKicker: '04 / Loved by many',
+  bestsellerTitle: 'The bestsellers.',
+  storyKicker: '05 / From our home to yours',
+  storyTitle: 'The glow behind Sahyadri Glow.',
+  storyText: 'Born from a love for the hills, botanicals and the comfort of a lit candle at the end of a long day. Every fragrance is made to bring a piece of that feeling home.',
+  storyVal1Title: 'Hand-poured',
+  storyVal1Text: 'Each candle is poured by hand in small batches, so no two are ever quite alike.',
+  storyVal2Title: 'Naturally sourced',
+  storyVal2Text: 'Botanicals and fragrance oils chosen for their purity, warmth and staying power.',
+  storyVal3Title: 'Made to last',
+  storyVal3Text: 'Slow-burning waxes and cotton wicks for an even, clean glow every time.',
+  storyFounderName: 'Harshali V. Mehta',
+  storyFounderRole: 'Founder & candle-maker',
+  contactKicker: '06 / Stay in the glow',
+  contactTitle: 'Notes from the mountains.',
+  contactText: 'New fragrances, small-batch releases and gentle reminders to make space for the good things.',
+  contactPhone: '8275165651',
+  contactEmail: 'hello@sahyadriglow.com',
+  instagramHandle: '@sahyadriglow',
+};
+
+const DEFAULT_COLLECTIONS: CustomCollection[] = [
+  {
+    id: 'mountain-calm',
+    name: 'Mountain Calm & Serenity',
+    slug: 'mountain-calm',
+    tagline: 'Evening Relaxation',
+    description: 'Grounding scents inspired by Sahyadri twilight to slow down, breathe deep, and unwind.',
+    productIds: ['lavender', 'sandalwood', 'vanilla-lavender'],
+    is_published: true,
+  },
+  {
+    id: 'sweet-warmth',
+    name: 'Sweet Warmth & Comfort',
+    slug: 'sweet-warmth',
+    tagline: 'Cozy Atmosphere',
+    description: 'Indulgent creamy vanilla and delicate floral accords that wrap any room in welcoming warmth.',
+    productIds: ['vanilla', 'rose', 'vanilla-rose'],
+    is_published: true,
+  },
+];
 
 function getOrCreateNumericId(email: string): string {
   try {
@@ -291,6 +419,44 @@ function App() {
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isCustomBoxOpen, setIsCustomBoxOpen] = useState(false);
+
+  // Website CMS Content State
+  const [siteContent, setSiteContent] = useState<SiteContent>(() => {
+    try {
+      const saved = localStorage.getItem('sahyadri_site_content');
+      return saved ? { ...DEFAULT_SITE_CONTENT, ...JSON.parse(saved) } : DEFAULT_SITE_CONTENT;
+    } catch {
+      return DEFAULT_SITE_CONTENT;
+    }
+  });
+
+  const updateSiteContent = (newContent: SiteContent) => {
+    setSiteContent(newContent);
+    try {
+      localStorage.setItem('sahyadri_site_content', JSON.stringify(newContent));
+    } catch (e) {
+      console.error('Failed to save site content to localStorage', e);
+    }
+  };
+
+  // Custom Collections State
+  const [customCollections, setCustomCollections] = useState<CustomCollection[]>(() => {
+    try {
+      const saved = localStorage.getItem('sahyadri_custom_collections');
+      return saved ? (JSON.parse(saved) as CustomCollection[]) : DEFAULT_COLLECTIONS;
+    } catch {
+      return DEFAULT_COLLECTIONS;
+    }
+  });
+
+  const updateCollections = (cols: CustomCollection[]) => {
+    setCustomCollections(cols);
+    try {
+      localStorage.setItem('sahyadri_custom_collections', JSON.stringify(cols));
+    } catch (e) {
+      console.error('Failed to save collections to localStorage', e);
+    }
+  };
 
   // Customer Authentication state
   const [currentUser, setCurrentUser] = useState<CustomerUser | null>(() => {
@@ -534,12 +700,22 @@ function App() {
   const navigate = (id: string) => { setIsMenuOpen(false); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); };
 
   if (isAdminMode) {
-    return <AdminPanel onExit={() => setIsAdminMode(false)} showToast={showToast} />;
+    return (
+      <AdminPanel
+        onExit={() => setIsAdminMode(false)}
+        showToast={showToast}
+        siteContent={siteContent}
+        onUpdateSiteContent={updateSiteContent}
+        customCollections={customCollections}
+        onUpdateCollections={updateCollections}
+        availableProducts={products}
+      />
+    );
   }
 
   return (
     <div className="app-shell">
-      <div className="announcement"><Sparkles size={14} /> Hand-poured with care in the Sahyadris <span>•</span> Thoughtful gifting, beautifully wrapped</div>
+      <div className="announcement"><Sparkles size={14} /> {siteContent.announcementText}</div>
       <header className="site-header">
         <button className="icon-button menu-button" onClick={() => setIsMenuOpen((open) => !open)} aria-label="Open menu"><Menu size={22} /></button>
         <a className="brand-lockup" href="#top" aria-label="Sahyadri Glow home"><img src={LOGO} alt="Sahyadri Glow Artisanal Candles Logo" width="44" height="44" /></a>
@@ -643,63 +819,119 @@ function App() {
         <section className="hero-section">
           <div className="hero-copy">
             <div className="hero-logo"><img src={LOGO} alt="Sahyadri Glow Studio Logo" width="140" height="140" fetchPriority="high" /></div>
-            <p className="eyebrow">The Sahyadri collection · 01</p>
-            <h1>Bring the essence of <em>Sahyadri</em> home.</h1>
-            <p className="hero-text">Thoughtfully crafted scented candles that transform everyday moments into warm, beautiful rituals.</p>
-            <div className="hero-actions"><button className="button button-dark" onClick={scrollToShop}>Shop our candles <ArrowRight size={16} /></button><button className="text-button" onClick={() => navigate('fragrances')}>Explore fragrances <ArrowRight size={16} /></button></div>
-            <div className="hero-note"><span className="note-line" /> <span>Handcrafted in small batches<br /><strong>by Harshali V. Mehta</strong></span></div>
+            <p className="eyebrow">{siteContent.heroEyebrow}</p>
+            <h1>{siteContent.heroTitle}</h1>
+            <p className="hero-text">{siteContent.heroText}</p>
+            <div className="hero-actions"><button className="button button-dark" onClick={scrollToShop}>{siteContent.heroPrimaryBtn} <ArrowRight size={16} /></button><button className="text-button" onClick={() => navigate('fragrances')}>{siteContent.heroSecondaryBtn} <ArrowRight size={16} /></button></div>
+            <div className="hero-note"><span className="note-line" /> <span>{siteContent.heroFounderNote}</span></div>
           </div>
           <div className="hero-image-wrap"><img src="https://images.pexels.com/photos/6101288/pexels-photo-6101288.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Sahyadri Glow botanical scented candle surrounded by eucalyptus and warm light" width="650" height="812" loading="lazy" decoding="async" /><div className="hero-image-caption"><span>01</span><span>Find your quiet glow</span></div></div>
         </section>
 
         <section id="fragrances" className="intro-section section-padding">
-          <div className="section-kicker"><span>01 /</span> Fragrance wardrobe</div>
-          <div className="intro-grid"><h2>A little luxury<br /><em>for every mood.</em></h2><p>From the soft embrace of Vanilla to the grounding depth of Sandalwood, each Sahyadri Glow fragrance is an invitation to slow down, breathe deep and make home feel more like you.</p></div>
-          <div className="fragrance-pills"><span>Calm</span><span>Warmth</span><span>Freshness</span><span>Romance</span><span>Stillness</span></div><p className="mood-peace">Peace, in every mood.</p>
+          <div className="section-kicker">{siteContent.wardrobeKicker}</div>
+          <div className="intro-grid"><h2>{siteContent.wardrobeTitle}</h2><p>{siteContent.wardrobeText}</p></div>
+          <div className="fragrance-pills">
+            {siteContent.wardrobePills.split(',').map((p) => {
+              const pillText = p.trim();
+              return pillText ? <span key={pillText}>{pillText}</span> : null;
+            })}
+          </div>
+          <p className="mood-peace">{siteContent.wardrobeFooterText}</p>
         </section>
 
         <section id="shop" className="shop-section section-padding">
-          <div className="shop-heading"><div><div className="section-kicker"><span>02 /</span> Shop the collection</div><h2>Made to <em>linger.</em></h2></div><button className="round-arrow" onClick={scrollToShop} aria-label="Scroll to shop collection"><ArrowRight size={18} /></button></div>
-          <div className="filter-row"><div className="filter-tabs"><button className={activeCategory === 'all' ? 'active' : ''} onClick={() => setActiveCategory('all')}>All candles</button><button className={activeCategory === 'single' ? 'active' : ''} onClick={() => setActiveCategory('single')}>Single fragrances</button><button className={activeCategory === 'blend' ? 'active' : ''} onClick={() => setActiveCategory('blend')}>Signature blends</button></div><span className="product-count">{isLoading ? 'Loading collection...' : `${filteredProducts.length} fragrances`}</span></div>
+          <div className="shop-heading"><div><div className="section-kicker">{siteContent.shopKicker}</div><h2>{siteContent.shopTitle}</h2></div><button className="round-arrow" onClick={scrollToShop} aria-label="Scroll to shop collection"><ArrowRight size={18} /></button></div>
+          <div className="filter-row">
+            <div className="filter-tabs">
+              <button className={activeCategory === 'all' ? 'active' : ''} onClick={() => setActiveCategory('all')}>All candles</button>
+              <button className={activeCategory === 'single' ? 'active' : ''} onClick={() => setActiveCategory('single')}>Single fragrances</button>
+              <button className={activeCategory === 'blend' ? 'active' : ''} onClick={() => setActiveCategory('blend')}>Signature blends</button>
+              {customCollections.filter((c) => c.is_published).map((col) => (
+                <button
+                  key={col.id}
+                  onClick={() => {
+                    const el = document.getElementById(`collection-${col.slug}`);
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  title={col.description}
+                >
+                  ✨ {col.name}
+                </button>
+              ))}
+            </div>
+            <span className="product-count">{isLoading ? 'Loading collection...' : `${filteredProducts.length} fragrances`}</span>
+          </div>
           {loadError && <p className="catalog-note">{loadError}</p>}
           <div className="product-grid">{filteredProducts.map((product) => <ProductCard key={product.id} product={product} onSelect={setSelectedProduct} onAdd={addToCart} />)}</div>
         </section>
 
+        {/* Dynamic Collections added via Admin Panel */}
+        {customCollections.filter((c) => c.is_published).map((col, idx) => {
+          const colProducts = products.filter((p) => col.productIds.includes(p.id));
+          if (colProducts.length === 0) return null;
+          return (
+            <section
+              key={col.id}
+              id={`collection-${col.slug}`}
+              className="custom-collection-section section-padding"
+            >
+              <div className="collection-heading">
+                <div className="section-kicker">
+                  <span>Collection {String(idx + 1).padStart(2, '0')} /</span> {col.tagline || 'Curated Series'}
+                </div>
+                <h2>{col.name}</h2>
+                {col.description && <p className="collection-desc">{col.description}</p>}
+              </div>
+              <div className="product-grid">
+                {colProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onSelect={setSelectedProduct}
+                    onAdd={addToCart}
+                  />
+                ))}
+              </div>
+            </section>
+          );
+        })}
+
         <section className="blend-section section-padding">
-          <div className="blend-heading"><div className="section-kicker"><span>03 /</span> Signature blends</div><h2>Layered like<br /><em>the landscape.</em></h2><p>Our blends are composed like a journey — familiar notes meeting unexpected turns, inspired by the many moods of the mountains.</p></div>
-          <div className="blend-feature"><img src={(featuredProducts[0] ?? fallbackProducts[5]).image_url} alt="Sahyadri Glow Vanilla and Lavender signature candle blend" width="650" height="500" loading="lazy" decoding="async" /><div className="blend-card"><p className="eyebrow">The blend no. 01</p><h3>Vanilla<br /><em>+ Lavender</em></h3><p>Creamy comfort meets a quiet botanical heart.</p><div className="blend-actions"><button className="button button-light" onClick={() => addToCart(featuredProducts[0] ?? fallbackProducts[5])}>Discover the blend <ArrowRight size={16} /></button><button className="text-button blend-custom-button" onClick={() => setIsCustomBoxOpen(true)}>Customise your box <ArrowRight size={16} /></button></div></div></div>
+          <div className="blend-heading"><div className="section-kicker">{siteContent.blendKicker}</div><h2>{siteContent.blendTitle}</h2><p>{siteContent.blendText}</p></div>
+          <div className="blend-feature"><img src={(featuredProducts[0] ?? fallbackProducts[5]).image_url} alt="Sahyadri Glow Vanilla and Lavender signature candle blend" width="650" height="500" loading="lazy" decoding="async" /><div className="blend-card"><p className="eyebrow">{siteContent.blendCardEyebrow}</p><h3>{siteContent.blendCardTitle}</h3><p>{siteContent.blendCardText}</p><div className="blend-actions"><button className="button button-light" onClick={() => addToCart(featuredProducts[0] ?? fallbackProducts[5])}>Discover the blend <ArrowRight size={16} /></button><button className="text-button blend-custom-button" onClick={() => setIsCustomBoxOpen(true)}>Customise your box <ArrowRight size={16} /></button></div></div></div>
         </section>
 
         <section className="bestseller-section section-padding">
-          <div className="shop-heading"><div><div className="section-kicker"><span>04 /</span> Loved by many</div><h2>The <em>bestsellers.</em></h2></div><button className="text-button" onClick={scrollToShop}>View all <ArrowRight size={16} /></button></div>
+          <div className="shop-heading"><div><div className="section-kicker">{siteContent.bestsellerKicker}</div><h2>{siteContent.bestsellerTitle}</h2></div><button className="text-button" onClick={scrollToShop}>View all <ArrowRight size={16} /></button></div>
           <div className="mini-grid">{bestsellers.map((product) => <ProductCard key={product.id} product={product} onSelect={setSelectedProduct} onAdd={addToCart} compact />)}</div>
         </section>
 
         <section id="story" className="story-section section-padding">
           <div className="story-art"><img src={STORY_LOGO} alt="Sahyadri Glow Handcrafted Candle Emblem" width="300" height="300" loading="lazy" decoding="async" /></div>
           <div className="story-card">
-            <div className="section-kicker"><span>05 /</span> From our home to yours</div>
-            <h2>The glow behind<br /><em>Sahyadri Glow.</em></h2>
-            <p>Born from a love for the hills, botanicals and the comfort of a lit candle at the end of a long day. Every fragrance is made to bring a piece of that feeling home.</p>
+            <div className="section-kicker">{siteContent.storyKicker}</div>
+            <h2>{siteContent.storyTitle}</h2>
+            <p>{siteContent.storyText}</p>
             <div className="story-values">
-              <div className="story-value"><span className="story-value-num">01</span><h4>Hand-poured</h4><p>Each candle is poured by hand in small batches, so no two are ever quite alike.</p></div>
-              <div className="story-value"><span className="story-value-num">02</span><h4>Naturally sourced</h4><p>Botanicals and fragrance oils chosen for their purity, warmth and staying power.</p></div>
-              <div className="story-value"><span className="story-value-num">03</span><h4>Made to last</h4><p>Slow-burning waxes and cotton wicks for an even, clean glow every time.</p></div>
+              <div className="story-value"><span className="story-value-num">01</span><h4>{siteContent.storyVal1Title}</h4><p>{siteContent.storyVal1Text}</p></div>
+              <div className="story-value"><span className="story-value-num">02</span><h4>{siteContent.storyVal2Title}</h4><p>{siteContent.storyVal2Text}</p></div>
+              <div className="story-value"><span className="story-value-num">03</span><h4>{siteContent.storyVal3Title}</h4><p>{siteContent.storyVal3Text}</p></div>
             </div>
             <div className="story-founder">
               <div className="story-founder-avatar"><img src={STORY_LOGO} alt="Harshali V. Mehta - Founder &amp; Candle Maker" width="60" height="60" loading="lazy" decoding="async" /></div>
-              <div><p className="story-founder-name">Harshali V. Mehta</p><p className="story-founder-role">Founder & candle-maker</p></div>
+              <div><p className="story-founder-name">{siteContent.storyFounderName}</p><p className="story-founder-role">{siteContent.storyFounderRole}</p></div>
             </div>
             <button className="button button-outline" onClick={() => navigate('contact')}>Get in touch <ArrowRight size={16} /></button>
           </div>
         </section>
 
         <section id="contact" className="contact-section section-padding">
-          <div><div className="section-kicker"><span>06 /</span> Stay in the glow</div><h2>Notes from<br /><em>the mountains.</em></h2><p>New fragrances, small-batch releases and gentle reminders to make space for the good things.</p>
+          <div><div className="section-kicker">{siteContent.contactKicker}</div><h2>{siteContent.contactTitle}</h2><p>{siteContent.contactText}</p>
           <div className="contact-info">
-            <div className="contact-info-item"><Phone size={16} /><span>Call us</span><a href="tel:8275165651">8275165651</a></div>
-            <div className="contact-info-item"><Mail size={16} /><span>Email us</span><a href="mailto:hello@sahyadriglow.com">hello@sahyadriglow.com</a></div>
-            <div className="contact-info-item"><Instagram size={16} /><span>Follow</span><a href="https://www.instagram.com/sahyadriglow" target="_blank" rel="noreferrer">@sahyadriglow</a></div>
+            <div className="contact-info-item"><Phone size={16} /><span>Call us</span><a href={`tel:${siteContent.contactPhone}`}>{siteContent.contactPhone}</a></div>
+            <div className="contact-info-item"><Mail size={16} /><span>Email us</span><a href={`mailto:${siteContent.contactEmail}`}>{siteContent.contactEmail}</a></div>
+            <div className="contact-info-item"><Instagram size={16} /><span>Follow</span><a href={`https://www.instagram.com/${siteContent.instagramHandle.replace('@', '')}`} target="_blank" rel="noreferrer">{siteContent.instagramHandle}</a></div>
           </div>
           </div>
           <form
@@ -2409,13 +2641,36 @@ function AdminLogin({ onClose, onSuccess, showToast }: { onClose: () => void; on
   </div>;
 }
 
-function AdminPanel({ onExit, showToast }: { onExit: () => void; showToast: (msg: string) => void }) {
-  const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products');
+function AdminPanel({
+  onExit,
+  showToast,
+  siteContent,
+  onUpdateSiteContent,
+  customCollections,
+  onUpdateCollections,
+  availableProducts,
+}: {
+  onExit: () => void;
+  showToast: (msg: string) => void;
+  siteContent: SiteContent;
+  onUpdateSiteContent: (content: SiteContent) => void;
+  customCollections: CustomCollection[];
+  onUpdateCollections: (cols: CustomCollection[]) => void;
+  availableProducts: Product[];
+}) {
+  const [activeTab, setActiveTab] = useState<'products' | 'collections' | 'orders' | 'content'>('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isAddingCombo, setIsAddingCombo] = useState(false);
+
+  // Collections state
+  const [editingCollection, setEditingCollection] = useState<CustomCollection | null>(null);
+  const [isAddingCollection, setIsAddingCollection] = useState(false);
+
+  // CMS Form local draft state
+  const [cmsForm, setCmsForm] = useState<SiteContent>(siteContent);
 
   // Orders & Customers State
   const [orders, setOrders] = useState<Order[]>([]);
@@ -2568,6 +2823,47 @@ function AdminPanel({ onExit, showToast }: { onExit: () => void; showToast: (msg
     onExit();
   };
 
+  const handleSaveCollection = (col: CustomCollection) => {
+    let updated: CustomCollection[];
+    const exists = customCollections.some((c) => c.id === col.id);
+    if (exists) {
+      updated = customCollections.map((c) => (c.id === col.id ? col : c));
+    } else {
+      updated = [...customCollections, col];
+    }
+    onUpdateCollections(updated);
+    setIsAddingCollection(false);
+    setEditingCollection(null);
+    showToast(`Collection "${col.name}" saved successfully.`);
+  };
+
+  const handleDeleteCollection = (id: string) => {
+    if (!confirm('Are you sure you want to delete this collection?')) return;
+    const updated = customCollections.filter((c) => c.id !== id);
+    onUpdateCollections(updated);
+    showToast('Collection deleted.');
+  };
+
+  const handleToggleCollectionPublished = (id: string) => {
+    const updated = customCollections.map((c) =>
+      c.id === id ? { ...c, is_published: !c.is_published } : c
+    );
+    onUpdateCollections(updated);
+    showToast('Collection visibility updated.');
+  };
+
+  const handleSaveCms = () => {
+    onUpdateSiteContent(cmsForm);
+    showToast('Website content saved & updated live!');
+  };
+
+  const handleResetCms = () => {
+    if (!confirm('Reset all website text to factory defaults?')) return;
+    setCmsForm(DEFAULT_SITE_CONTENT);
+    onUpdateSiteContent(DEFAULT_SITE_CONTENT);
+    showToast('Website content reset to defaults.');
+  };
+
   // Filtered orders calculation
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
@@ -2594,7 +2890,7 @@ function AdminPanel({ onExit, showToast }: { onExit: () => void; showToast: (msg
         <div><h1>Owner Panel</h1><span>Sahyadri Glow management</span></div>
       </div>
       <div className="admin-header-actions">
-        {activeTab === 'products' ? (
+        {activeTab === 'products' && (
           <div className="admin-product-btn-group">
             <button
               className="button button-combo-header"
@@ -2607,8 +2903,26 @@ function AdminPanel({ onExit, showToast }: { onExit: () => void; showToast: (msg
               <Plus size={16} /> Add product
             </button>
           </div>
-        ) : (
-          <button className="button button-dark" onClick={() => exportOrdersToCSV(filteredOrders)}><Download size={16} /> Export CSV ({filteredOrders.length})</button>
+        )}
+        {activeTab === 'collections' && (
+          <button className="button button-dark" onClick={() => setIsAddingCollection(true)}>
+            <Plus size={16} /> + Add Collection
+          </button>
+        )}
+        {activeTab === 'orders' && (
+          <button className="button button-dark" onClick={() => exportOrdersToCSV(filteredOrders)}>
+            <Download size={16} /> Export CSV ({filteredOrders.length})
+          </button>
+        )}
+        {activeTab === 'content' && (
+          <div className="admin-cms-actions">
+            <button className="button button-outline" onClick={handleResetCms} title="Reset to default brand copy">
+              <RotateCcw size={15} /> Reset Defaults
+            </button>
+            <button className="button button-dark" onClick={handleSaveCms}>
+              <Check size={16} /> Save Website Content
+            </button>
+          </div>
         )}
         <button className="admin-exit-button" onClick={handleSignOut}><LogOut size={17} /> <span>Sign out</span></button>
       </div>
@@ -2624,14 +2938,26 @@ function AdminPanel({ onExit, showToast }: { onExit: () => void; showToast: (msg
           <Package size={17} /> Products ({products.length})
         </button>
         <button
+          className={`admin-tab-btn ${activeTab === 'collections' ? 'active' : ''}`}
+          onClick={() => setActiveTab('collections')}
+        >
+          <FolderHeart size={17} /> Collections ({customCollections.length})
+        </button>
+        <button
           className={`admin-tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
           onClick={() => setActiveTab('orders')}
         >
           <Users size={17} /> Customers &amp; Orders ({orders.length})
         </button>
+        <button
+          className={`admin-tab-btn ${activeTab === 'content' ? 'active' : ''}`}
+          onClick={() => setActiveTab('content')}
+        >
+          <Edit3 size={17} /> Website CMS / Content
+        </button>
       </div>
 
-      {activeTab === 'products' ? (
+      {activeTab === 'products' && (
         <>
           <div className="admin-stats">
             <div className="admin-stat"><Package size={20} /><div><b>{products.length}</b><span>Total products</span></div></div>
@@ -2670,7 +2996,111 @@ function AdminPanel({ onExit, showToast }: { onExit: () => void; showToast: (msg
             </div>
           )}
         </>
-      ) : (
+      )}
+
+      {/* Collections Tab */}
+      {activeTab === 'collections' && (
+        <>
+          <div className="admin-stats">
+            <div className="admin-stat"><FolderHeart size={20} /><div><b>{customCollections.length}</b><span>Total Collections</span></div></div>
+            <div className="admin-stat"><Eye size={20} /><div><b>{customCollections.filter(c => c.is_published).length}</b><span>Published on Store</span></div></div>
+            <div className="admin-stat"><Package size={20} /><div><b>{new Set(customCollections.flatMap(c => c.productIds)).size}</b><span>Products Featured</span></div></div>
+          </div>
+
+          <div className="admin-collections-header">
+            <div>
+              <h3>Curated Collections Showcase</h3>
+              <p>Each collection extends the customer page with a dedicated showcase section, unique mood description, and exclusive product grid.</p>
+            </div>
+            <button className="button button-dark" onClick={() => setIsAddingCollection(true)}>
+              <Plus size={16} /> Add Collection
+            </button>
+          </div>
+
+          <div className="admin-collections-grid">
+            {customCollections.length === 0 ? (
+              <div className="admin-empty-state">
+                <FolderHeart size={40} />
+                <h4>No custom collections created yet</h4>
+                <p>Click "Add Collection" above to group your handcrafted candles into themed showcases.</p>
+                <button className="button button-dark" onClick={() => setIsAddingCollection(true)}>
+                  <Plus size={16} /> Create your first collection
+                </button>
+              </div>
+            ) : (
+              customCollections.map((col) => {
+                const colProds = (availableProducts.length > 0 ? availableProducts : products).filter((p) => col.productIds.includes(p.id));
+                return (
+                  <div className="admin-collection-card" key={col.id}>
+                    <div className="admin-col-card-header">
+                      <div>
+                        <span className="admin-col-slug">#{col.slug}</span>
+                        <h3>{col.name}</h3>
+                        {col.tagline && <span className="admin-col-tagline">{col.tagline}</span>}
+                      </div>
+                      <div className="admin-col-toggles">
+                        <button
+                          className={`admin-toggle ${col.is_published ? 'on' : ''}`}
+                          onClick={() => handleToggleCollectionPublished(col.id)}
+                          title={col.is_published ? 'Published on store (Click to unpublish)' : 'Draft (Click to publish)'}
+                        >
+                          <Eye size={15} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <p className="admin-col-desc">{col.description}</p>
+
+                    <div className="admin-col-products-preview">
+                      <span className="admin-col-count">
+                        <strong>{colProds.length}</strong> {colProds.length === 1 ? 'candle' : 'candles'} in this collection:
+                      </span>
+                      <div className="admin-col-thumbs">
+                        {colProds.slice(0, 6).map((p) => (
+                          <div className="admin-col-thumb" key={p.id} title={`${p.name} (₹${p.sale_price_inr || p.price_inr})`}>
+                            <img src={getProductImages(p)[0]} alt={p.name} />
+                          </div>
+                        ))}
+                        {colProds.length > 6 && (
+                          <div className="admin-col-thumb-more">+{colProds.length - 6}</div>
+                        )}
+                        {colProds.length === 0 && (
+                          <span className="admin-col-empty-hint">No candles assigned yet</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="admin-col-footer">
+                      <span className={`admin-col-badge ${col.is_published ? 'published' : 'draft'}`}>
+                        {col.is_published ? 'Live on Store' : 'Draft / Hidden'}
+                      </span>
+                      <div className="admin-col-actions">
+                        <button
+                          className="admin-action edit"
+                          onClick={() => setEditingCollection(col)}
+                          title="Edit collection name, tagline, description and products"
+                        >
+                          <Pencil size={15} /> Edit
+                        </button>
+                        <button
+                          className="admin-action delete"
+                          onClick={() => handleDeleteCollection(col.id)}
+                          title="Delete collection"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Customers & Orders Tab */}
+      {activeTab === 'orders' && (
         <>
           {/* Customers & Orders Tab */}
           <div className="admin-stats">
@@ -2837,6 +3267,439 @@ function AdminPanel({ onExit, showToast }: { onExit: () => void; showToast: (msg
           )}
         </>
       )}
+
+      {/* Website CMS / Content Editor Tab */}
+      {activeTab === 'content' && (
+        <div className="admin-cms-container">
+          <div className="admin-cms-intro">
+            <div>
+              <h3>Website Content &amp; Copy Editor (CMS)</h3>
+              <p>Customize and manage every title, story, fragrance wardrobe note, button label, and contact detail across the website in real-time.</p>
+            </div>
+            <div className="admin-cms-top-actions">
+              <button className="button button-outline" onClick={handleResetCms}>
+                <RotateCcw size={15} /> Reset Defaults
+              </button>
+              <button className="button button-dark" onClick={handleSaveCms}>
+                <Check size={16} /> Save Website Content
+              </button>
+            </div>
+          </div>
+
+          <div className="admin-cms-sections-grid">
+            {/* 1. Announcement Banner */}
+            <div className="cms-card">
+              <div className="cms-card-header">
+                <h4>1. Top Announcement Banner</h4>
+                <span>Ticker banner displayed at the very top of the page</span>
+              </div>
+              <div className="cms-field">
+                <label>Announcement Message</label>
+                <input
+                  type="text"
+                  value={cmsForm.announcementText}
+                  onChange={(e) => setCmsForm({ ...cmsForm, announcementText: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* 2. Hero Section */}
+            <div className="cms-card">
+              <div className="cms-card-header">
+                <h4>2. Hero Banner &amp; Welcome</h4>
+                <span>Primary headline and action buttons</span>
+              </div>
+              <div className="cms-field">
+                <label>Eyebrow Tagline</label>
+                <input
+                  type="text"
+                  value={cmsForm.heroEyebrow}
+                  onChange={(e) => setCmsForm({ ...cmsForm, heroEyebrow: e.target.value })}
+                />
+              </div>
+              <div className="cms-field">
+                <label>Main Headline</label>
+                <input
+                  type="text"
+                  value={cmsForm.heroTitle}
+                  onChange={(e) => setCmsForm({ ...cmsForm, heroTitle: e.target.value })}
+                />
+              </div>
+              <div className="cms-field">
+                <label>Hero Description</label>
+                <textarea
+                  rows={3}
+                  value={cmsForm.heroText}
+                  onChange={(e) => setCmsForm({ ...cmsForm, heroText: e.target.value })}
+                />
+              </div>
+              <div className="cms-row-2">
+                <div className="cms-field">
+                  <label>Primary Button Text</label>
+                  <input
+                    type="text"
+                    value={cmsForm.heroPrimaryBtn}
+                    onChange={(e) => setCmsForm({ ...cmsForm, heroPrimaryBtn: e.target.value })}
+                  />
+                </div>
+                <div className="cms-field">
+                  <label>Secondary Button Text</label>
+                  <input
+                    type="text"
+                    value={cmsForm.heroSecondaryBtn}
+                    onChange={(e) => setCmsForm({ ...cmsForm, heroSecondaryBtn: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="cms-field">
+                <label>Founder Note / Byline</label>
+                <input
+                  type="text"
+                  value={cmsForm.heroFounderNote}
+                  onChange={(e) => setCmsForm({ ...cmsForm, heroFounderNote: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* 3. Fragrance Wardrobe */}
+            <div className="cms-card">
+              <div className="cms-card-header">
+                <h4>3. Fragrance Wardrobe (Section 01)</h4>
+                <span>Fragrance philosophy, mood pills &amp; descriptions</span>
+              </div>
+              <div className="cms-row-2">
+                <div className="cms-field">
+                  <label>Section Kicker</label>
+                  <input
+                    type="text"
+                    value={cmsForm.wardrobeKicker}
+                    onChange={(e) => setCmsForm({ ...cmsForm, wardrobeKicker: e.target.value })}
+                  />
+                </div>
+                <div className="cms-field">
+                  <label>Section Title</label>
+                  <input
+                    type="text"
+                    value={cmsForm.wardrobeTitle}
+                    onChange={(e) => setCmsForm({ ...cmsForm, wardrobeTitle: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="cms-field">
+                <label>Wardrobe Story / Text</label>
+                <textarea
+                  rows={3}
+                  value={cmsForm.wardrobeText}
+                  onChange={(e) => setCmsForm({ ...cmsForm, wardrobeText: e.target.value })}
+                />
+              </div>
+              <div className="cms-field">
+                <label>Mood Pills (comma-separated, e.g. Calm, Warmth, Freshness)</label>
+                <input
+                  type="text"
+                  value={cmsForm.wardrobePills}
+                  onChange={(e) => setCmsForm({ ...cmsForm, wardrobePills: e.target.value })}
+                />
+              </div>
+              <div className="cms-field">
+                <label>Footer Tagline</label>
+                <input
+                  type="text"
+                  value={cmsForm.wardrobeFooterText}
+                  onChange={(e) => setCmsForm({ ...cmsForm, wardrobeFooterText: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* 4. Shop Section */}
+            <div className="cms-card">
+              <div className="cms-card-header">
+                <h4>4. Shop Section (Section 02)</h4>
+                <span>Main catalog section title</span>
+              </div>
+              <div className="cms-row-2">
+                <div className="cms-field">
+                  <label>Shop Kicker</label>
+                  <input
+                    type="text"
+                    value={cmsForm.shopKicker}
+                    onChange={(e) => setCmsForm({ ...cmsForm, shopKicker: e.target.value })}
+                  />
+                </div>
+                <div className="cms-field">
+                  <label>Shop Heading</label>
+                  <input
+                    type="text"
+                    value={cmsForm.shopTitle}
+                    onChange={(e) => setCmsForm({ ...cmsForm, shopTitle: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 5. Signature Blends */}
+            <div className="cms-card">
+              <div className="cms-card-header">
+                <h4>5. Signature Blends (Section 03)</h4>
+                <span>Blends highlight section &amp; featured blend note</span>
+              </div>
+              <div className="cms-row-2">
+                <div className="cms-field">
+                  <label>Blends Kicker</label>
+                  <input
+                    type="text"
+                    value={cmsForm.blendKicker}
+                    onChange={(e) => setCmsForm({ ...cmsForm, blendKicker: e.target.value })}
+                  />
+                </div>
+                <div className="cms-field">
+                  <label>Blends Heading</label>
+                  <input
+                    type="text"
+                    value={cmsForm.blendTitle}
+                    onChange={(e) => setCmsForm({ ...cmsForm, blendTitle: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="cms-field">
+                <label>Blends Description</label>
+                <textarea
+                  rows={2}
+                  value={cmsForm.blendText}
+                  onChange={(e) => setCmsForm({ ...cmsForm, blendText: e.target.value })}
+                />
+              </div>
+              <div className="cms-row-2">
+                <div className="cms-field">
+                  <label>Featured Blend Card Eyebrow</label>
+                  <input
+                    type="text"
+                    value={cmsForm.blendCardEyebrow}
+                    onChange={(e) => setCmsForm({ ...cmsForm, blendCardEyebrow: e.target.value })}
+                  />
+                </div>
+                <div className="cms-field">
+                  <label>Featured Blend Card Title</label>
+                  <input
+                    type="text"
+                    value={cmsForm.blendCardTitle}
+                    onChange={(e) => setCmsForm({ ...cmsForm, blendCardTitle: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="cms-field">
+                <label>Featured Blend Card Text</label>
+                <input
+                  type="text"
+                  value={cmsForm.blendCardText}
+                  onChange={(e) => setCmsForm({ ...cmsForm, blendCardText: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* 6. Bestsellers */}
+            <div className="cms-card">
+              <div className="cms-card-header">
+                <h4>6. Bestsellers Showcase (Section 04)</h4>
+                <span>Loved by many section</span>
+              </div>
+              <div className="cms-row-2">
+                <div className="cms-field">
+                  <label>Bestsellers Kicker</label>
+                  <input
+                    type="text"
+                    value={cmsForm.bestsellerKicker}
+                    onChange={(e) => setCmsForm({ ...cmsForm, bestsellerKicker: e.target.value })}
+                  />
+                </div>
+                <div className="cms-field">
+                  <label>Bestsellers Heading</label>
+                  <input
+                    type="text"
+                    value={cmsForm.bestsellerTitle}
+                    onChange={(e) => setCmsForm({ ...cmsForm, bestsellerTitle: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 7. Brand Story & Values */}
+            <div className="cms-card">
+              <div className="cms-card-header">
+                <h4>7. Brand Story &amp; Craftsmanship (Section 05)</h4>
+                <span>Story, founder details and 3 core values</span>
+              </div>
+              <div className="cms-row-2">
+                <div className="cms-field">
+                  <label>Story Kicker</label>
+                  <input
+                    type="text"
+                    value={cmsForm.storyKicker}
+                    onChange={(e) => setCmsForm({ ...cmsForm, storyKicker: e.target.value })}
+                  />
+                </div>
+                <div className="cms-field">
+                  <label>Story Heading</label>
+                  <input
+                    type="text"
+                    value={cmsForm.storyTitle}
+                    onChange={(e) => setCmsForm({ ...cmsForm, storyTitle: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="cms-field">
+                <label>Story Description</label>
+                <textarea
+                  rows={3}
+                  value={cmsForm.storyText}
+                  onChange={(e) => setCmsForm({ ...cmsForm, storyText: e.target.value })}
+                />
+              </div>
+              <div className="cms-row-2">
+                <div className="cms-field">
+                  <label>Value 01 Title</label>
+                  <input
+                    type="text"
+                    value={cmsForm.storyVal1Title}
+                    onChange={(e) => setCmsForm({ ...cmsForm, storyVal1Title: e.target.value })}
+                  />
+                </div>
+                <div className="cms-field">
+                  <label>Value 01 Description</label>
+                  <input
+                    type="text"
+                    value={cmsForm.storyVal1Text}
+                    onChange={(e) => setCmsForm({ ...cmsForm, storyVal1Text: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="cms-row-2">
+                <div className="cms-field">
+                  <label>Value 02 Title</label>
+                  <input
+                    type="text"
+                    value={cmsForm.storyVal2Title}
+                    onChange={(e) => setCmsForm({ ...cmsForm, storyVal2Title: e.target.value })}
+                  />
+                </div>
+                <div className="cms-field">
+                  <label>Value 02 Description</label>
+                  <input
+                    type="text"
+                    value={cmsForm.storyVal2Text}
+                    onChange={(e) => setCmsForm({ ...cmsForm, storyVal2Text: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="cms-row-2">
+                <div className="cms-field">
+                  <label>Value 03 Title</label>
+                  <input
+                    type="text"
+                    value={cmsForm.storyVal3Title}
+                    onChange={(e) => setCmsForm({ ...cmsForm, storyVal3Title: e.target.value })}
+                  />
+                </div>
+                <div className="cms-field">
+                  <label>Value 03 Description</label>
+                  <input
+                    type="text"
+                    value={cmsForm.storyVal3Text}
+                    onChange={(e) => setCmsForm({ ...cmsForm, storyVal3Text: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="cms-row-2">
+                <div className="cms-field">
+                  <label>Founder Name</label>
+                  <input
+                    type="text"
+                    value={cmsForm.storyFounderName}
+                    onChange={(e) => setCmsForm({ ...cmsForm, storyFounderName: e.target.value })}
+                  />
+                </div>
+                <div className="cms-field">
+                  <label>Founder Role / Title</label>
+                  <input
+                    type="text"
+                    value={cmsForm.storyFounderRole}
+                    onChange={(e) => setCmsForm({ ...cmsForm, storyFounderRole: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 8. Contact & Social */}
+            <div className="cms-card">
+              <div className="cms-card-header">
+                <h4>8. Contact &amp; Social Channels (Section 06)</h4>
+                <span>Phone, email &amp; Instagram handle</span>
+              </div>
+              <div className="cms-row-2">
+                <div className="cms-field">
+                  <label>Contact Kicker</label>
+                  <input
+                    type="text"
+                    value={cmsForm.contactKicker}
+                    onChange={(e) => setCmsForm({ ...cmsForm, contactKicker: e.target.value })}
+                  />
+                </div>
+                <div className="cms-field">
+                  <label>Contact Heading</label>
+                  <input
+                    type="text"
+                    value={cmsForm.contactTitle}
+                    onChange={(e) => setCmsForm({ ...cmsForm, contactTitle: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="cms-field">
+                <label>Contact Description</label>
+                <textarea
+                  rows={2}
+                  value={cmsForm.contactText}
+                  onChange={(e) => setCmsForm({ ...cmsForm, contactText: e.target.value })}
+                />
+              </div>
+              <div className="cms-row-3">
+                <div className="cms-field">
+                  <label>Phone / WhatsApp</label>
+                  <input
+                    type="text"
+                    value={cmsForm.contactPhone}
+                    onChange={(e) => setCmsForm({ ...cmsForm, contactPhone: e.target.value })}
+                  />
+                </div>
+                <div className="cms-field">
+                  <label>Email Address</label>
+                  <input
+                    type="text"
+                    value={cmsForm.contactEmail}
+                    onChange={(e) => setCmsForm({ ...cmsForm, contactEmail: e.target.value })}
+                  />
+                </div>
+                <div className="cms-field">
+                  <label>Instagram Handle</label>
+                  <input
+                    type="text"
+                    value={cmsForm.instagramHandle}
+                    onChange={(e) => setCmsForm({ ...cmsForm, instagramHandle: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="admin-cms-bottom-bar">
+            <button className="button button-outline" onClick={handleResetCms}>
+              <RotateCcw size={16} /> Reset Defaults
+            </button>
+            <button className="button button-dark" onClick={handleSaveCms}>
+              <Check size={18} /> Save &amp; Publish Website Changes Live
+            </button>
+          </div>
+        </div>
+      )}
     </div>
 
     {(editingProduct || isAdding || isAddingCombo) && (
@@ -2849,7 +3712,228 @@ function AdminPanel({ onExit, showToast }: { onExit: () => void; showToast: (msg
         showToast={showToast}
       />
     )}
+
+    {(editingCollection || isAddingCollection) && (
+      <CollectionEditModal
+        collection={editingCollection}
+        availableProducts={availableProducts.length > 0 ? availableProducts : products}
+        onClose={() => { setEditingCollection(null); setIsAddingCollection(false); }}
+        onSave={handleSaveCollection}
+        showToast={showToast}
+      />
+    )}
   </div>;
+}
+
+function CollectionEditModal({
+  collection,
+  availableProducts,
+  onClose,
+  onSave,
+  showToast,
+}: {
+  collection: CustomCollection | null;
+  availableProducts: Product[];
+  onClose: () => void;
+  onSave: (col: CustomCollection) => void;
+  showToast: (msg: string) => void;
+}) {
+  const isEditing = !!collection;
+  const [name, setName] = useState(collection?.name ?? '');
+  const [slug, setSlug] = useState(collection?.slug ?? '');
+  const [tagline, setTagline] = useState(collection?.tagline ?? '');
+  const [description, setDescription] = useState(collection?.description ?? '');
+  const [isPublished, setIsPublished] = useState(collection?.is_published ?? true);
+  const [selectedIds, setSelectedIds] = useState<string[]>(collection?.productIds ?? []);
+  const [search, setSearch] = useState('');
+
+  const handleNameChange = (val: string) => {
+    setName(val);
+    if (!isEditing) {
+      setSlug(
+        val
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '')
+      );
+    }
+  };
+
+  const toggleProduct = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const selectAll = () => {
+    setSelectedIds(availableProducts.map((p) => p.id));
+  };
+
+  const clearAll = () => {
+    setSelectedIds([]);
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      showToast('Please enter a collection name.');
+      return;
+    }
+    const cleanSlug = (slug || name)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+    const newCol: CustomCollection = {
+      id: collection?.id ?? `col_${Date.now()}`,
+      name: name.trim(),
+      slug: cleanSlug || `col-${Date.now()}`,
+      tagline: tagline.trim() || undefined,
+      description: description.trim() || 'A curated selection of artisanal scented candles.',
+      productIds: selectedIds,
+      is_published: isPublished,
+    };
+
+    onSave(newCol);
+  };
+
+  const filteredProds = availableProducts.filter(
+    (p) =>
+      !search ||
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.fragrance?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="product-modal-backdrop" onClick={onClose}>
+      <div className="collection-modal-box" onClick={(e) => e.stopPropagation()}>
+        <div className="product-modal-header">
+          <div>
+            <h2>{isEditing ? 'Edit Collection' : 'Create New Collection'}</h2>
+            <p>Customers will see this collection as its own showcase section on the store page.</p>
+          </div>
+          <button className="icon-button" onClick={onClose}><X size={18} /></button>
+        </div>
+
+        <form onSubmit={handleFormSubmit} className="collection-form">
+          <div className="collection-form-scrollable">
+            <div className="field-group-2">
+              <div className="field">
+                <label>Collection Name *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Monsoon Rain &amp; Earth"
+                  value={name}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="field">
+                <label>URL Slug / Anchor</label>
+                <input
+                  type="text"
+                  placeholder="e.g. monsoon-rain-earth"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="field">
+              <label>Tagline / Subheading</label>
+              <input
+                type="text"
+                placeholder="e.g. Fresh Petrichor &amp; Evening Calm"
+                value={tagline}
+                onChange={(e) => setTagline(e.target.value)}
+              />
+            </div>
+
+            <div className="field">
+              <label>Collection Description *</label>
+              <textarea
+                rows={2}
+                placeholder="Describe the mood, fragrance inspiration, or ritual for this collection..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="field-checkbox-row">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={isPublished}
+                  onChange={(e) => setIsPublished(e.target.checked)}
+                />
+                <span><strong>Publish on Customer Storefront</strong> (immediately visible to buyers)</span>
+              </label>
+            </div>
+
+            {/* Product Selector */}
+            <div className="collection-products-picker-section">
+              <div className="picker-header">
+                <div>
+                  <h4>Select Candles for this Collection ({selectedIds.length} selected)</h4>
+                  <p>Choose which candles appear in this collection's exclusive storefront section.</p>
+                </div>
+                <div className="picker-header-actions">
+                  <button type="button" className="picker-quick-btn" onClick={selectAll}>Select all</button>
+                  <button type="button" className="picker-quick-btn" onClick={clearAll}>Clear all</button>
+                </div>
+              </div>
+
+              <div className="picker-search">
+                <Search size={15} />
+                <input
+                  type="text"
+                  placeholder="Search candles by name or scent..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+
+              <div className="collection-picker-grid">
+                {filteredProds.map((p) => {
+                  const isChecked = selectedIds.includes(p.id);
+                  const price = p.sale_price_inr || p.price_inr;
+                  return (
+                    <div
+                      key={p.id}
+                      className={`collection-picker-item ${isChecked ? 'selected' : ''}`}
+                      onClick={() => toggleProduct(p.id)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {}}
+                      />
+                      <img src={getProductImages(p)[0]} alt={p.name} />
+                      <div className="picker-item-info">
+                        <strong>{p.name}</strong>
+                        <span>{p.fragrance || (p.category === 'blend' ? 'Signature Blend' : 'Artisanal')}</span>
+                        <b>₹{price}</b>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="product-modal-actions">
+            <button type="button" className="button button-outline" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="button button-dark">
+              <Check size={16} /> Save Collection
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 function ProductEditForm({
