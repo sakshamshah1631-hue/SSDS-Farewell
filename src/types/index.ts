@@ -1,5 +1,7 @@
 export type Division = 'Div A' | 'Div B' | 'Div C' | 'Div D' | 'Div E' | 'Div F' | 'Div G';
 
+export type PaymentStatus = 'Pending' | 'Received';
+
 export interface StudentRegistration {
   id: string; // e.g., SSDS-X-2026-8492
   fullName: string;
@@ -10,6 +12,9 @@ export interface StudentRegistration {
   favoriteMemory?: string;
   registeredAt: string; // ISO date string
   status: 'Confirmed' | 'Pending';
+  paymentStatus: PaymentStatus;
+  passIssued: boolean;
+  passIssuedAt?: string;
 }
 
 export interface VenueConfig {

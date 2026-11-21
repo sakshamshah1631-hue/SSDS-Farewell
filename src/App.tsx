@@ -3,8 +3,6 @@ import { ActiveView, StudentRegistration, VenueConfig } from './types';
 import {
   getRegistrations,
   getVenueConfig,
-  fetchRegistrationsFromSupabase,
-  fetchVenueFromSupabase,
 } from './lib/storage';
 import { AtmosphericBackground } from './components/AtmosphericBackground';
 import { Header } from './components/Header';
@@ -25,41 +23,21 @@ export const App: React.FC = () => {
   const [registrations, setRegistrations] = useState<StudentRegistration[]>(() => getRegistrations());
   const [passModalStudent, setPassModalStudent] = useState<StudentRegistration | null>(null);
 
-  // Initial cloud sync with Supabase on mount
-  useEffect(() => {
-    let isMounted = true;
-    fetchRegistrationsFromSupabase()
-      .then((cloudStudents) => {
-        if (isMounted && cloudStudents && cloudStudents.length > 0) {
-          setRegistrations(cloudStudents);
-        }
-      })
-      .catch(() => {});
-
-    fetchVenueFromSupabase()
-      .then((cloudVenue) => {
-        if (isMounted && cloudVenue) {
-          setVenueConfig(cloudVenue);
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
   // Sync scroll on view change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [activeView]);
 
-  const handleRegistrationSuccess = (newStudent: StudentRegistration) => {
+  const handleRegistrationSuccess = () => {
     setRegistrations(getRegistrations());
   };
 
   const handleVenueConfigUpdated = (newConfig: VenueConfig) => {
     setVenueConfig(newConfig);
+  };
+
+  const handlePassIssued = () => {
+    setRegistrations(getRegistrations());
   };
 
   return (
@@ -114,6 +92,7 @@ export const App: React.FC = () => {
         student={passModalStudent}
         venueConfig={venueConfig}
         onClose={() => setPassModalStudent(null)}
+        onPassIssued={handlePassIssued}
       />
 
       {/* Mobile Floating Quick Action Pill */}

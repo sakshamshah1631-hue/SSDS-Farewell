@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { ActiveView, Division, StudentRegistration, VenueConfig } from '../types';
+import { ActiveView, Division, StudentRegistration, VenueConfig, PaymentStatus } from '../types';
 import {
   getRegistrations,
   saveRegistration,
   updateRegistration,
   deleteRegistration,
+  togglePaymentStatus,
+  issueStudentPass,
   updateVenueConfig,
   exportRegistrationsToCSV,
   loginAdmin,
@@ -25,9 +27,13 @@ import {
   X,
   FileSpreadsheet,
   ArrowLeft,
-  Eye,
   LogOut,
   Layers,
+  QrCode,
+  Clock,
+  Sparkles,
+  CreditCard,
+  Check,
 } from 'lucide-react';
 
 interface AdminViewProps {
@@ -53,6 +59,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [registrations, setRegistrations] = useState<StudentRegistration[]>(() => getRegistrations());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDivision, setSelectedDivision] = useState<string>('All');
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'division'>('date');
 
   // Modals State
@@ -60,11 +67,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<StudentRegistration | null>(null);
   const [deleteCandidate, setDeleteCandidate] = useState<StudentRegistration | null>(null);
+  const [paymentPromptStudent, setPaymentPromptStudent] = useState<StudentRegistration | null>(null);
 
   // Form states for Add/Edit
   const [formName, setFormName] = useState('');
   const [formMobile, setFormMobile] = useState('');
   const [formDivision, setFormDivision] = useState<Division>('Div A');
+  const [formPaymentStatus, setFormPaymentStatus] = useState<PaymentStatus>('Pending');
   const [formSong, setFormSong] = useState('');
   const [formMemory, setFormMemory] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -103,6 +112,10 @@ export const AdminView: React.FC<AdminViewProps> = ({
   // Division counts & Analytics
   const analytics = useMemo(() => {
     const total = registrations.length;
+    const paidCount = registrations.filter((r) => r.paymentStatus === 'Received').length;
+    const pendingCount = registrations.filter((r) => r.paymentStatus !== 'Received').length;
+    const passIssuedCount = registrations.filter((r) => r.passIssued).length;
+
     const divCounts: Record<Division, number> = {
       'Div A': registrations.filter((r) => r.division === 'Div A').length,
       'Div B': registrations.filter((r) => r.division === 'Div B').length,
@@ -113,7 +126,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
       'Div G': registrations.filter((r) => r.division === 'Div G').length,
     };
 
-    return { total, divCounts };
+    return { total, paidCount, pendingCount, passIssuedCount, divCounts };
   }, [registrations]);
 
   // Filtered and Sorted Registrations
@@ -126,7 +139,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
           student.id.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesDivision =
           selectedDivision === 'All' ? true : student.division === selectedDivision;
-        return matchesSearch && matchesDivision;
+        const matchesPayment =
+          selectedPaymentStatus === 'All'
+            ? true
+            : selectedPaymentStatus === 'Received'
+            ? student.paymentStatus === 'Received'
+            : student.paymentStatus !== 'Received';
+        return matchesSearch && matchesDivision && matchesPayment;
       })
       .sort((a, b) => {
         if (sortBy === 'date') {
@@ -140,13 +159,14 @@ export const AdminView: React.FC<AdminViewProps> = ({
         }
         return 0;
       });
-  }, [registrations, searchQuery, selectedDivision, sortBy]);
+  }, [registrations, searchQuery, selectedDivision, selectedPaymentStatus, sortBy]);
 
   // Handle Add Student
   const handleOpenAddModal = () => {
     setFormName('');
     setFormMobile('');
     setFormDivision('Div A');
+    setFormPaymentStatus('Pending');
     setFormSong('');
     setFormMemory('');
     setFormError(null);
@@ -168,7 +188,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
     }
 
     try {
-      saveRegistration({
+      const created = saveRegistration({
         fullName: formName.trim(),
         mobile: cleanMobile,
         className: 'Class 10',
@@ -176,6 +196,11 @@ export const AdminView: React.FC<AdminViewProps> = ({
         songRequest: formSong.trim() || undefined,
         favoriteMemory: formMemory.trim() || undefined,
       });
+
+      if (formPaymentStatus === 'Received') {
+        updateRegistration(created.id, { paymentStatus: 'Received' });
+      }
+
       setRegistrations(getRegistrations());
       setIsAddModalOpen(false);
     } catch (err: unknown) {
@@ -191,6 +216,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
     setFormName(student.fullName);
     setFormMobile(student.mobile);
     setFormDivision(student.division);
+    setFormPaymentStatus(student.paymentStatus);
     setFormSong(student.songRequest || '');
     setFormMemory(student.favoriteMemory || '');
     setFormError(null);
@@ -217,6 +243,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
         fullName: formName.trim(),
         mobile: cleanMobile,
         division: formDivision,
+        paymentStatus: formPaymentStatus,
         songRequest: formSong.trim() || undefined,
         favoriteMemory: formMemory.trim() || undefined,
       });
@@ -227,6 +254,42 @@ export const AdminView: React.FC<AdminViewProps> = ({
       if (err instanceof Error) {
         setFormError(err.message);
       }
+    }
+  };
+
+  // Toggle Payment Status
+  const handleTogglePayment = (studentId: string) => {
+    togglePaymentStatus(studentId);
+    setRegistrations(getRegistrations());
+  };
+
+  // Give VIP QR Pass (Only after payment is received)
+  const handleGivePass = (student: StudentRegistration) => {
+    if (student.paymentStatus !== 'Received') {
+      // Payment is pending: prompt admin to verify payment first
+      setPaymentPromptStudent(student);
+      return;
+    }
+
+    // Payment is received: issue pass and open ticket modal
+    issueStudentPass(student.id);
+    const updatedList = getRegistrations();
+    setRegistrations(updatedList);
+    const updatedStudent = updatedList.find((s) => s.id === student.id) || student;
+    onSelectStudentForPass(updatedStudent);
+  };
+
+  // Confirm Payment and immediately give QR Pass
+  const handleConfirmPaymentAndGivePass = () => {
+    if (!paymentPromptStudent) return;
+    updateRegistration(paymentPromptStudent.id, { paymentStatus: 'Received' });
+    issueStudentPass(paymentPromptStudent.id);
+    const updatedList = getRegistrations();
+    setRegistrations(updatedList);
+    const updatedStudent = updatedList.find((s) => s.id === paymentPromptStudent.id);
+    setPaymentPromptStudent(null);
+    if (updatedStudent) {
+      onSelectStudentForPass(updatedStudent);
     }
   };
 
@@ -360,7 +423,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
             Class 10 Farewell Management Console
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Enrollment rosters (Div A through G), venue controls, and export reporting.
+            Student roster (Div A–G), fee verification, personalized QR Pass generation & live venue broadcast.
           </p>
         </div>
 
@@ -392,50 +455,73 @@ export const AdminView: React.FC<AdminViewProps> = ({
       </div>
 
       {/* Analytics KPI Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         
         {/* Total Students */}
         <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-cyan-500/20 shadow-lg">
           <div className="flex items-center justify-between text-slate-400 mb-1.5">
-            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider">Total Registered</span>
+            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider">Registered</span>
             <Users className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-bold text-white font-cinzel tracking-wider">
             {analytics.total}
           </div>
-          <div className="text-[10px] sm:text-[11px] text-cyan-300/80 mt-1">
-            Confirmed Class 10 Students
+          <div className="text-[10px] text-cyan-300/80 mt-1 truncate">
+            Class 10 Entries
           </div>
         </div>
 
-        {/* Division Breakdown Metric (Div A to Div G) */}
-        <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-lg sm:col-span-2">
+        {/* Fees Paid */}
+        <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-emerald-500/30 shadow-lg">
           <div className="flex items-center justify-between text-slate-400 mb-1.5">
-            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider">Divisions (Div A – Div G)</span>
-            <Layers className="w-4 h-4 text-amber-300" />
+            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-emerald-400">Fees Paid</span>
+            <CreditCard className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="grid grid-cols-7 gap-1.5 pt-1 text-center">
-            {allDivisions.map((div) => (
-              <div key={div} className="p-1.5 sm:p-2 rounded-xl bg-midnight-950/80 border border-slate-800">
-                <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 block truncate">{div.replace('Div ', '')}</span>
-                <span className="text-sm sm:text-base font-bold text-cyan-300 font-cinzel">{analytics.divCounts[div]}</span>
-              </div>
-            ))}
+          <div className="text-2xl sm:text-3xl font-bold text-emerald-300 font-cinzel tracking-wider">
+            {analytics.paidCount}
+          </div>
+          <div className="text-[10px] text-emerald-400/80 mt-1 truncate">
+            Payment Verified
           </div>
         </div>
 
-        {/* Venue Status Card & Dynamic Switcher */}
-        <div className="glass-panel-gold rounded-2xl p-4 sm:p-5 border border-amber-400/30 shadow-lg flex flex-col justify-between">
+        {/* Fees Pending */}
+        <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-amber-500/30 shadow-lg">
+          <div className="flex items-center justify-between text-slate-400 mb-1.5">
+            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-amber-300">Fees Pending</span>
+            <Clock className="w-4 h-4 text-amber-400" />
+          </div>
+          <div className="text-2xl sm:text-3xl font-bold text-amber-300 font-cinzel tracking-wider">
+            {analytics.pendingCount}
+          </div>
+          <div className="text-[10px] text-amber-400/80 mt-1 truncate">
+            Awaiting Clearance
+          </div>
+        </div>
+
+        {/* VIP QR Passes Issued */}
+        <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-cyan-500/30 shadow-lg">
+          <div className="flex items-center justify-between text-slate-400 mb-1.5">
+            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-cyan-300">QR Passes Issued</span>
+            <QrCode className="w-4 h-4 text-cyan-400" />
+          </div>
+          <div className="text-2xl sm:text-3xl font-bold text-cyan-300 font-cinzel tracking-wider">
+            {analytics.passIssuedCount}
+          </div>
+          <div className="text-[10px] text-cyan-300/80 mt-1 truncate">
+            Given to Students
+          </div>
+        </div>
+
+        {/* Venue Status Card & Switcher */}
+        <div className="glass-panel-gold rounded-2xl p-4 sm:p-5 border border-amber-400/30 shadow-lg flex flex-col justify-between col-span-2 lg:col-span-1">
           <div>
             <div className="flex items-center justify-between text-amber-300 mb-1">
-              <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider">Venue Broadcast</span>
+              <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider">Venue Notice</span>
               <MapPin className="w-4 h-4 text-amber-400" />
             </div>
-            <div className="text-xs font-bold text-white uppercase tracking-wider mt-0.5">
-              {venueConfig.isTentative ? 'Status: Tentative' : 'Status: Confirmed'}
-            </div>
-            <div className="text-[11px] text-slate-300 truncate mt-0.5">
-              {venueConfig.isTentative ? venueConfig.locationArea : venueConfig.confirmedName}
+            <div className="text-xs font-bold text-white uppercase tracking-wider mt-0.5 truncate">
+              {venueConfig.isTentative ? 'Tentative' : 'Confirmed'}
             </div>
           </div>
           
@@ -443,10 +529,26 @@ export const AdminView: React.FC<AdminViewProps> = ({
             onClick={() => setIsVenueEditorOpen(!isVenueEditorOpen)}
             className="mt-3 py-1.5 px-3 rounded-lg bg-amber-400/20 text-amber-200 border border-amber-400/40 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider hover:bg-amber-400/30 transition-all text-center"
           >
-            {isVenueEditorOpen ? 'Close Editor' : 'Edit Venue Settings'}
+            {isVenueEditorOpen ? 'Close Editor' : 'Edit Venue'}
           </button>
         </div>
 
+      </div>
+
+      {/* Division Breakdown Metric Row (Div A to Div G) */}
+      <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-lg">
+        <div className="flex items-center justify-between text-slate-400 mb-2">
+          <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider">Division-wise Registration Distribution</span>
+          <Layers className="w-4 h-4 text-amber-300" />
+        </div>
+        <div className="grid grid-cols-7 gap-1.5 sm:gap-2 text-center">
+          {allDivisions.map((div) => (
+            <div key={div} className="p-2 sm:p-3 rounded-xl bg-midnight-950/80 border border-slate-800 hover:border-slate-700 transition-colors">
+              <span className="text-[9px] sm:text-[11px] uppercase font-bold text-slate-400 block truncate">{div}</span>
+              <span className="text-sm sm:text-lg font-bold text-cyan-300 font-cinzel">{analytics.divCounts[div]}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Dynamic Live Venue Updater Drawer */}
@@ -458,7 +560,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 Live Venue Broadcast Controller
               </h2>
               <p className="text-xs text-slate-300">
-                Instantly updates the Landing Hero, Venue Section, and Student Digital Passes across the site.
+                Instantly updates the Landing Hero, Venue Section, and Student VIP Passes across the entire website.
               </p>
             </div>
             <button
@@ -572,7 +674,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
       {/* Data Management Section: Search, Filter & Actions */}
       <div className="glass-panel rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-800 space-y-5">
         
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4">
+        {/* Controls Bar */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 sm:gap-4">
           
           {/* Search Input */}
           <div className="relative flex-1">
@@ -586,8 +689,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
             />
           </div>
 
-          {/* Division Filter Pills (All, Div A to Div G) */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          {/* Division Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
             {['All', 'Div A', 'Div B', 'Div C', 'Div D', 'Div E', 'Div F', 'Div G'].map((div) => (
               <button
                 key={div}
@@ -603,13 +706,34 @@ export const AdminView: React.FC<AdminViewProps> = ({
             ))}
           </div>
 
+          {/* Payment Status Filter Pills */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {['All', 'Received', 'Pending'].map((status) => (
+              <button
+                key={status}
+                onClick={() => setSelectedPaymentStatus(status)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all border shrink-0 ${
+                  selectedPaymentStatus === status
+                    ? status === 'Received'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50'
+                      : status === 'Pending'
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-400/50'
+                      : 'bg-blue-500/20 text-blue-200 border-blue-400/50'
+                    : 'bg-midnight-950 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+              >
+                {status === 'Received' ? 'Paid' : status}
+              </button>
+            ))}
+          </div>
+
           {/* Manual Add Student Button */}
           <button
             onClick={handleOpenAddModal}
             className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold text-xs tracking-wider uppercase shadow-md shadow-cyan-900/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-1.5 shrink-0"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Student Entry</span>
+            <span>Add Student</span>
           </button>
         </div>
 
@@ -618,82 +742,139 @@ export const AdminView: React.FC<AdminViewProps> = ({
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-slate-800 bg-midnight-900/80 text-slate-400 uppercase tracking-wider font-semibold">
-                <th className="py-3 px-3.5 sm:px-4">Pass ID</th>
-                <th className="py-3 px-3.5 sm:px-4">Student Name</th>
-                <th className="py-3 px-3.5 sm:px-4">Division</th>
-                <th className="py-3 px-3.5 sm:px-4">Mobile</th>
-                <th className="py-3 px-3.5 sm:px-4">Song Request</th>
-                <th className="py-3 px-3.5 sm:px-4 text-right">Actions</th>
+                <th className="py-3 px-3 sm:px-4">Pass ID</th>
+                <th className="py-3 px-3 sm:px-4">Student Name</th>
+                <th className="py-3 px-3 sm:px-4">Division</th>
+                <th className="py-3 px-3 sm:px-4">Mobile</th>
+                <th className="py-3 px-3 sm:px-4">Payment Status</th>
+                <th className="py-3 px-3 sm:px-4 text-center">VIP Pass & QR</th>
+                <th className="py-3 px-3 sm:px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/80 text-slate-300">
               {filteredRegistrations.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-500 italic">
+                  <td colSpan={7} className="py-8 text-center text-slate-500 italic">
                     No student registrations match the selected criteria.
                   </td>
                 </tr>
               ) : (
-                filteredRegistrations.map((student) => (
-                  <tr
-                    key={student.id}
-                    className="hover:bg-slate-900/60 transition-colors group"
-                  >
-                    <td className="py-3.5 px-3.5 sm:px-4 font-mono font-bold text-cyan-400 whitespace-nowrap">
-                      {student.id}
-                    </td>
-                    <td className="py-3.5 px-3.5 sm:px-4 font-medium text-white whitespace-nowrap">
-                      {student.fullName}
-                    </td>
-                    <td className="py-3.5 px-3.5 sm:px-4 whitespace-nowrap">
-                      <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-800 text-cyan-200 border border-slate-700">
-                        {student.division}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-3.5 sm:px-4 font-mono text-slate-300 whitespace-nowrap">
-                      +91 {student.mobile}
-                    </td>
-                    <td className="py-3.5 px-3.5 sm:px-4 text-slate-400 max-w-xs truncate">
-                      {student.songRequest || '—'}
-                    </td>
-                    <td className="py-3.5 px-3.5 sm:px-4 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1.5 sm:gap-2">
-                        {/* View Pass */}
-                        <button
-                          onClick={() => onSelectStudentForPass(student)}
-                          title="View / Print Digital Admission Pass"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-slate-800 transition-colors"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
+                filteredRegistrations.map((student) => {
+                  const isPaid = student.paymentStatus === 'Received';
+                  const isPassIssued = student.passIssued;
 
-                        {/* Edit Record */}
-                        <button
-                          onClick={() => handleOpenEdit(student)}
-                          title="Edit Student Details"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-slate-800 transition-colors"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
+                  return (
+                    <tr
+                      key={student.id}
+                      className="hover:bg-slate-900/60 transition-colors group"
+                    >
+                      <td className="py-3.5 px-3 sm:px-4 font-mono font-bold text-cyan-400 whitespace-nowrap">
+                        {student.id}
+                      </td>
 
-                        {/* Delete Record */}
+                      <td className="py-3.5 px-3 sm:px-4 font-medium text-white whitespace-nowrap">
+                        <div>{student.fullName}</div>
+                        {student.songRequest && (
+                          <div className="text-[10px] text-slate-400 italic truncate max-w-xs">
+                            Song: {student.songRequest}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="py-3.5 px-3 sm:px-4 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-800 text-cyan-200 border border-slate-700">
+                          {student.division}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-3 sm:px-4 font-mono text-slate-300 whitespace-nowrap">
+                        +91 {student.mobile}
+                      </td>
+
+                      {/* Payment Status (Clickable Toggle) */}
+                      <td className="py-3.5 px-3 sm:px-4 whitespace-nowrap">
                         <button
-                          onClick={() => setDeleteCandidate(student)}
-                          title="Delete Registration"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors"
+                          onClick={() => handleTogglePayment(student.id)}
+                          title={`Click to mark as ${isPaid ? 'Pending' : 'Received'}`}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                            isPaid
+                              ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25'
+                              : 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25'
+                          }`}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {isPaid ? (
+                            <>
+                              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                              <span>Paid</span>
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="w-3 h-3 text-amber-400" />
+                              <span>Pending</span>
+                            </>
+                          )}
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+
+                      {/* VIP QR Pass Action: Allowed only after payment is received */}
+                      <td className="py-3.5 px-3 sm:px-4 whitespace-nowrap text-center">
+                        {isPaid ? (
+                          <button
+                            onClick={() => handleGivePass(student)}
+                            title="Generate and issue scannable VIP QR Pass"
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow ${
+                              isPassIssued
+                                ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-400/40 hover:bg-cyan-500/30'
+                                : 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 hover:brightness-110 shadow-amber-950/40'
+                            }`}
+                          >
+                            <QrCode className="w-3.5 h-3.5" />
+                            <span>{isPassIssued ? 'View QR Ticket' : 'Give QR Pass'}</span>
+                            {!isPassIssued && <Sparkles className="w-3 h-3 ml-0.5" />}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleGivePass(student)}
+                            title="Requires fee payment before issuing QR Pass"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold text-slate-500 bg-midnight-950 border border-slate-800 hover:border-slate-700 hover:text-slate-400 transition-colors"
+                          >
+                            <Lock className="w-3 h-3 text-slate-500" />
+                            <span>Payment Req.</span>
+                          </button>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3.5 px-3 sm:px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Edit Record */}
+                          <button
+                            onClick={() => handleOpenEdit(student)}
+                            title="Edit Student Details"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-slate-800 transition-colors"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+
+                          {/* Delete Record */}
+                          <button
+                            onClick={() => setDeleteCandidate(student)}
+                            title="Delete Registration"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
 
-        {/* Footer info */}
+        {/* Table Footer */}
         <div className="flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 pt-1 gap-2 text-center sm:text-left">
           <span>
             Showing <strong className="text-white">{filteredRegistrations.length}</strong> of{' '}
@@ -705,6 +886,45 @@ export const AdminView: React.FC<AdminViewProps> = ({
         </div>
 
       </div>
+
+      {/* MODAL: Payment Clearance Confirmation Prompt (When clicking Give QR on Pending student) */}
+      {paymentPromptStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
+          <div className="w-full max-w-md glass-panel rounded-2xl sm:rounded-3xl p-6 border border-amber-500/40 shadow-2xl space-y-4">
+            <div className="w-11 h-11 rounded-2xl bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300">
+              <CreditCard className="w-5 h-5" />
+            </div>
+
+            <div>
+              <h3 className="font-editorial-serif text-lg font-bold text-white">
+                Payment Verification Required
+              </h3>
+              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                Fee contribution for <strong className="text-white">{paymentPromptStudent.fullName}</strong> ({paymentPromptStudent.division}) is currently marked as <strong className="text-amber-300">Pending</strong>.
+              </p>
+              <p className="text-xs text-slate-400 mt-2">
+                Official Scannable VIP Entry Passes can only be given after payment is received. Would you like to confirm payment and issue their QR ticket now?
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                onClick={() => setPaymentPromptStudent(null)}
+                className="px-4 py-2.5 rounded-xl glass-panel text-slate-300 text-xs font-semibold uppercase tracking-wider"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmPaymentAndGivePass}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow"
+              >
+                <Check className="w-4 h-4" />
+                <span>Mark Paid & Issue QR</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL: Add Student Entry */}
       {isAddModalOpen && (
@@ -739,41 +959,57 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   required
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
-                  placeholder="e.g. Tanvi Prakash More"
+                  placeholder="e.g. Aarav Sachin Deshmukh"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                  Mobile Number (10 digits)
+                  10-Digit Mobile Number
                 </label>
                 <input
                   type="tel"
                   required
                   maxLength={10}
                   value={formMobile}
-                  onChange={(e) => setFormMobile(e.target.value.replace(/\D/g, ''))}
-                  placeholder="9860334411"
+                  onChange={(e) => setFormMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="9822014589"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white font-mono"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                  Division
-                </label>
-                <select
-                  value={formDivision}
-                  onChange={(e) => setFormDivision(e.target.value as Division)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white"
-                >
-                  {allDivisions.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                    Division
+                  </label>
+                  <select
+                    value={formDivision}
+                    onChange={(e) => setFormDivision(e.target.value as Division)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white"
+                  >
+                    {allDivisions.map((div) => (
+                      <option key={div} value={div}>
+                        {div}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                    Payment Status
+                  </label>
+                  <select
+                    value={formPaymentStatus}
+                    onChange={(e) => setFormPaymentStatus(e.target.value as PaymentStatus)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white"
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Received">Received (Paid)</option>
+                  </select>
+                </div>
               </div>
 
               <div>
@@ -784,24 +1020,37 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   type="text"
                   value={formSong}
                   onChange={(e) => setFormSong(e.target.value)}
-                  placeholder="e.g. Night Changes"
+                  placeholder="e.g. Memories - Maroon 5"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  Favorite School Memory (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={formMemory}
+                  onChange={(e) => setFormMemory(e.target.value)}
+                  placeholder="Sports day memories, auditorium rehearsals, etc."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                  className="px-4 py-2.5 rounded-xl glass-panel text-slate-300 text-xs font-semibold uppercase tracking-wider"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold text-xs uppercase tracking-wider"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-xs font-semibold uppercase tracking-wider shadow"
                 >
-                  Save Registration
+                  Save Student
                 </button>
               </div>
             </form>
@@ -812,13 +1061,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
       {/* MODAL: Edit Student Entry */}
       {isEditModalOpen && editingStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-          <div className="w-full max-w-lg glass-panel rounded-2xl sm:rounded-3xl p-5 sm:p-8 border border-amber-400/30 shadow-2xl relative my-auto">
+          <div className="w-full max-w-lg glass-panel rounded-2xl sm:rounded-3xl p-5 sm:p-8 border border-amber-500/30 shadow-2xl relative my-auto">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
               <div>
                 <h3 className="font-editorial-serif text-lg sm:text-xl font-bold text-white">
-                  Edit Student: {editingStudent.id}
+                  Edit Student Registration
                 </h3>
-                <span className="text-xs text-slate-400">Update verified contact or class details</span>
+                <span className="text-xs font-mono text-cyan-400">{editingStudent.id}</span>
               </div>
               <button
                 onClick={() => setIsEditModalOpen(false)}
@@ -851,33 +1100,49 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                  Mobile Number (10 digits)
+                  10-Digit Mobile Number
                 </label>
                 <input
                   type="tel"
                   required
                   maxLength={10}
                   value={formMobile}
-                  onChange={(e) => setFormMobile(e.target.value.replace(/\D/g, ''))}
+                  onChange={(e) => setFormMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white font-mono"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                  Division
-                </label>
-                <select
-                  value={formDivision}
-                  onChange={(e) => setFormDivision(e.target.value as Division)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white"
-                >
-                  {allDivisions.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                    Division
+                  </label>
+                  <select
+                    value={formDivision}
+                    onChange={(e) => setFormDivision(e.target.value as Division)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white"
+                  >
+                    {allDivisions.map((div) => (
+                      <option key={div} value={div}>
+                        {div}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                    Payment Status
+                  </label>
+                  <select
+                    value={formPaymentStatus}
+                    onChange={(e) => setFormPaymentStatus(e.target.value as PaymentStatus)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white"
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Received">Received (Paid)</option>
+                  </select>
+                </div>
               </div>
 
               <div>
@@ -892,19 +1157,31 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+                  Favorite School Memory
+                </label>
+                <textarea
+                  rows={2}
+                  value={formMemory}
+                  onChange={(e) => setFormMemory(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                  className="px-4 py-2.5 rounded-xl glass-panel text-slate-300 text-xs font-semibold uppercase tracking-wider"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider"
+                  className="px-5 py-2.5 rounded-xl bg-amber-400 text-slate-950 text-xs font-bold uppercase tracking-wider shadow"
                 >
-                  Save Changes
+                  Update Record
                 </button>
               </div>
             </form>
@@ -912,33 +1189,33 @@ export const AdminView: React.FC<AdminViewProps> = ({
         </div>
       )}
 
-      {/* MODAL: Delete Confirmation */}
+      {/* MODAL: Delete Student Confirmation */}
       {deleteCandidate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
-          <div className="w-full max-w-md glass-panel rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-red-500/40 shadow-2xl relative text-center">
-            <div className="w-12 h-12 rounded-full bg-red-950 border border-red-500/40 flex items-center justify-center mx-auto mb-3.5 text-red-400">
-              <Trash2 className="w-6 h-6" />
+          <div className="w-full max-w-md glass-panel rounded-2xl sm:rounded-3xl p-6 border border-red-500/40 shadow-2xl space-y-4">
+            <div className="w-11 h-11 rounded-2xl bg-red-950/50 border border-red-500/40 flex items-center justify-center text-red-400">
+              <Trash2 className="w-5 h-5" />
             </div>
 
-            <h3 className="font-editorial-serif text-lg sm:text-xl font-bold text-white">
-              Delete Student Entry?
-            </h3>
+            <div>
+              <h3 className="font-editorial-serif text-lg font-bold text-white">
+                Delete Registration Record?
+              </h3>
+              <p className="text-xs text-slate-300 mt-1">
+                Are you sure you want to remove <strong className="text-white">{deleteCandidate.fullName}</strong> ({deleteCandidate.id})? This action cannot be undone.
+              </p>
+            </div>
 
-            <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-              Are you sure you want to delete the registration for{' '}
-              <strong className="text-white">{deleteCandidate.fullName}</strong> ({deleteCandidate.id})? This will invalidate their digital pass.
-            </p>
-
-            <div className="flex items-center justify-center gap-3 mt-6">
+            <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setDeleteCandidate(null)}
-                className="px-5 py-2.5 rounded-xl glass-panel text-slate-300 hover:text-white text-xs font-semibold uppercase tracking-wider"
+                className="px-4 py-2.5 rounded-xl glass-panel text-slate-300 text-xs font-semibold uppercase tracking-wider"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDelete}
-                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold uppercase tracking-wider shadow-lg shadow-red-900/40"
+                className="px-4 py-2.5 rounded-xl bg-red-600 text-white text-xs font-semibold uppercase tracking-wider shadow hover:bg-red-500"
               >
                 Confirm Delete
               </button>

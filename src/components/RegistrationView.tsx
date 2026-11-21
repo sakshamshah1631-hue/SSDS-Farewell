@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   AlertCircle,
-  Printer,
   User,
   Phone,
   GraduationCap,
@@ -16,9 +15,11 @@ import {
   MapPin,
   Calendar,
   Clock,
-  ShieldCheck,
   RotateCcw,
   Share2,
+  Check,
+  ShieldAlert,
+  Info,
 } from 'lucide-react';
 
 interface RegistrationViewProps {
@@ -45,6 +46,7 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmedStudent, setConfirmedStudent] = useState<StudentRegistration | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [copiedReceipt, setCopiedReceipt] = useState(false);
 
   const availableDivisions: Division[] = ['Div A', 'Div B', 'Div C', 'Div D', 'Div E', 'Div F', 'Div G'];
 
@@ -75,7 +77,7 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
       const existingStudents = getRegistrations();
       const duplicate = existingStudents.find((s) => s.mobile.replace(/\D/g, '') === cleanMobile);
       if (duplicate) {
-        newErrors.mobile = `This mobile number is already registered under Pass ID ${duplicate.id} (${duplicate.fullName}).`;
+        newErrors.mobile = `This mobile number is already registered under ID ${duplicate.id} (${duplicate.fullName}).`;
       }
     }
 
@@ -114,23 +116,22 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleSharePass = () => {
+  const handleCopyReceipt = () => {
     if (!confirmedStudent) return;
-    const shareText = `Official Pass Issued! ${confirmedStudent.fullName} (${confirmedStudent.id}) registered for SSDS Class 10 Farewell Gala 2026.`;
-    if (navigator.share) {
-      navigator.share({
-        title: 'SSDS Class of 2026 Farewell Pass',
-        text: shareText,
-        url: window.location.href,
-      }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(shareText);
-      alert('Pass verification summary copied to clipboard!');
-    }
+    const text = [
+      `SSDS CLASS 10 FAREWELL 2026 — REGISTRATION RECEIPT`,
+      `Reference ID: ${confirmedStudent.id}`,
+      `Student Name: ${confirmedStudent.fullName}`,
+      `Class & Division: ${confirmedStudent.className} — ${confirmedStudent.division}`,
+      `Mobile: +91 ${confirmedStudent.mobile}`,
+      `Status: Registration Logged (Pending Payment Verification)`,
+      `Note: Provide this Reference ID to your Class In-Charge to receive your official scannable VIP QR Pass.`,
+    ].join('\n');
+
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedReceipt(true);
+      setTimeout(() => setCopiedReceipt(false), 3000);
+    });
   };
 
   const handleResetForAnother = () => {
@@ -162,32 +163,30 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
         </span>
       </div>
 
-      {/* CONFIRMATION STATE: Digital VIP Admission Pass */}
+      {/* CONFIRMATION STATE: Registration Acknowledgement Receipt (NO QR CODE in User View) */}
       {confirmedStudent ? (
         <div className="space-y-6 sm:space-y-8 animate-fadeIn">
-          {/* Success Banner */}
+          
+          {/* Success Status Banner */}
           <div className="glass-panel-gold rounded-2xl p-4 sm:p-5 border border-amber-400/30 flex items-start sm:items-center gap-3.5 text-left no-print">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center shrink-0 text-amber-300 mt-0.5 sm:mt-0">
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider font-cinzel">
-                Registration Confirmed & Pass Issued
+                Registration Application Received
               </h3>
               <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5 leading-relaxed">
-                Official pass issued for <strong className="text-white">{confirmedStudent.fullName}</strong>. Screenshot or save your boarding pass below.
+                Thank you, <strong className="text-white">{confirmedStudent.fullName}</strong>. Your entry has been recorded in the Class of 2026 registry.
               </p>
             </div>
           </div>
 
-          {/* Luxury Digital Pass Card */}
+          {/* Luxury Official Receipt Card */}
           <div className="relative mx-auto max-w-2xl">
-            <div className="ticket-notch-left hidden sm:block" />
-            <div className="ticket-notch-right hidden sm:block" />
-
-            <div className="print-pass-card rounded-2xl sm:rounded-3xl overflow-hidden glass-panel border border-cyan-400/40 shadow-2xl relative bg-[#070b14]/95">
+            <div className="rounded-2xl sm:rounded-3xl overflow-hidden glass-panel border border-cyan-500/30 shadow-2xl relative bg-[#070b14]/95">
               
-              {/* Top Ornamental Header */}
+              {/* Header */}
               <div className="bg-gradient-to-r from-midnight-950 via-slate-900 to-midnight-950 p-5 sm:p-7 border-b border-cyan-500/20 relative">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                   <div className="flex items-center gap-3">
@@ -200,14 +199,14 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
                         <span>Sinhagad Spring Dale School, Ambegaon</span>
                       </div>
                       <h2 className="text-base sm:text-2xl font-bold text-white font-editorial-serif tracking-tight">
-                        Class of 2026 Farewell Gala Pass
+                        Farewell 2026 Registration Receipt
                       </h2>
                     </div>
                   </div>
 
                   <div className="text-left sm:text-right w-full sm:w-auto flex sm:flex-col items-center sm:items-end justify-between pt-2 sm:pt-0 border-t border-slate-800 sm:border-0">
                     <span className="text-[9px] sm:text-[10px] uppercase font-mono tracking-widest text-slate-400 block">
-                      Official Pass ID
+                      Reference ID
                     </span>
                     <span className="text-xs sm:text-base font-bold font-mono text-cyan-300 bg-cyan-950/80 px-2.5 py-1 rounded-lg border border-cyan-500/40 inline-block shadow-inner">
                       {confirmedStudent.id}
@@ -216,157 +215,139 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
                 </div>
               </div>
 
-              {/* Pass Body Content */}
-              <div className="p-5 sm:p-7 grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 items-center">
-                <div className="md:col-span-2 space-y-3.5">
-                  <div>
+              {/* Receipt Content */}
+              <div className="p-5 sm:p-7 space-y-5">
+                
+                {/* Student Record Grid */}
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-slate-400 font-mono block mb-1">
+                    Registered Student
+                  </span>
+                  <span className="text-xl sm:text-2xl font-bold text-white font-editorial-serif block">
+                    {confirmedStudent.fullName}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-3 rounded-xl bg-midnight-950/70 border border-slate-800">
                     <span className="text-[10px] uppercase tracking-wider text-slate-400 font-mono block">
-                      Student Name
+                      Class & Division
                     </span>
-                    <span className="text-lg sm:text-2xl font-bold text-white font-editorial-serif break-words">
-                      {confirmedStudent.fullName}
+                    <span className="text-sm font-bold text-cyan-300 mt-0.5 block">
+                      {confirmedStudent.className} — {confirmedStudent.division}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 pt-1">
-                    <div className="p-2.5 rounded-xl bg-midnight-950/70 border border-slate-800">
-                      <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-400 font-mono block">
-                        Class & Division
-                      </span>
-                      <span className="text-xs sm:text-sm font-bold text-cyan-300 mt-0.5 block">
-                        {confirmedStudent.className} — {confirmedStudent.division}
-                      </span>
-                    </div>
-
-                    <div className="p-2.5 rounded-xl bg-midnight-950/70 border border-slate-800">
-                      <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-400 font-mono block">
-                        Verified Contact
-                      </span>
-                      <span className="text-xs sm:text-sm font-semibold text-slate-200 font-mono mt-0.5 block">
-                        +91 {confirmedStudent.mobile}
-                      </span>
-                    </div>
-                  </div>
-
-                  {confirmedStudent.songRequest && (
-                    <div className="pt-1">
-                      <span className="text-[10px] uppercase tracking-wider text-slate-400 font-mono block">
-                        Dance Floor Song Request
-                      </span>
-                      <span className="text-xs italic text-slate-300 flex items-center gap-1.5 mt-0.5 break-words">
-                        <Music className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                        {confirmedStudent.songRequest}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Event Schedule & Venue Note */}
-                  <div className="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3 text-xs text-slate-300">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                      <span>Grand Evening Gala</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                      <span>05:30 PM Onwards</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                      <span className="truncate">
-                        {venueConfig.isTentative
-                          ? 'Lawn Destination (South Pune / Ambegaon)'
-                          : venueConfig.confirmedName}
-                      </span>
-                    </div>
+                  <div className="p-3 rounded-xl bg-midnight-950/70 border border-slate-800">
+                    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-mono block">
+                      Registered Contact
+                    </span>
+                    <span className="text-sm font-semibold text-slate-200 font-mono mt-0.5 block">
+                      +91 {confirmedStudent.mobile}
+                    </span>
                   </div>
                 </div>
 
-                {/* QR Verification & Security Seal */}
-                <div className="flex flex-col items-center justify-center p-3.5 sm:p-4 rounded-2xl bg-midnight-950 border border-slate-800 text-center">
-                  <div className="p-2 sm:p-2.5 rounded-xl bg-white text-slate-950 mb-2 shadow-md">
-                    <svg
-                      className="w-22 h-22 sm:w-28 sm:h-28"
-                      viewBox="0 0 100 100"
-                      fill="currentColor"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <rect x="5" y="5" width="28" height="28" rx="4" fill="#070b14" />
-                      <rect x="10" y="10" width="18" height="18" rx="2" fill="#ffffff" />
-                      <rect x="14" y="14" width="10" height="10" fill="#070b14" />
-
-                      <rect x="67" y="5" width="28" height="28" rx="4" fill="#070b14" />
-                      <rect x="72" y="10" width="18" height="18" rx="2" fill="#ffffff" />
-                      <rect x="76" y="14" width="10" height="10" fill="#070b14" />
-
-                      <rect x="5" y="67" width="28" height="28" rx="4" fill="#070b14" />
-                      <rect x="10" y="72" width="18" height="18" rx="2" fill="#ffffff" />
-                      <rect x="14" y="76" width="10" height="10" fill="#070b14" />
-
-                      <rect x="38" y="10" width="8" height="8" fill="#070b14" />
-                      <rect x="50" y="14" width="8" height="8" fill="#070b14" />
-                      <rect x="38" y="26" width="8" height="8" fill="#070b14" />
-                      <rect x="14" y="38" width="8" height="8" fill="#070b14" />
-                      <rect x="26" y="46" width="8" height="8" fill="#070b14" />
-                      <rect x="42" y="42" width="16" height="16" rx="2" fill="#070b14" />
-                      <rect x="67" y="42" width="8" height="8" fill="#070b14" />
-                      <rect x="80" y="46" width="8" height="8" fill="#070b14" />
-                      <rect x="67" y="60" width="8" height="8" fill="#070b14" />
-                      <rect x="42" y="68" width="8" height="8" fill="#070b14" />
-                      <rect x="55" y="74" width="8" height="8" fill="#070b14" />
-                      <rect x="72" y="72" width="8" height="8" fill="#070b14" />
-                      <rect x="84" y="80" width="8" height="8" fill="#070b14" />
-                    </svg>
+                {confirmedStudent.songRequest && (
+                  <div className="p-3 rounded-xl bg-midnight-950/70 border border-slate-800 text-xs">
+                    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-mono block mb-1">
+                      Dance Floor Song Choice
+                    </span>
+                    <span className="italic text-slate-200 flex items-center gap-1.5">
+                      <Music className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      {confirmedStudent.songRequest}
+                    </span>
                   </div>
+                )}
 
-                  <span className="text-[9px] sm:text-[10px] font-mono text-slate-400 tracking-wider uppercase block">
-                    Scan to Verify Entry
-                  </span>
-                  <span className="text-[9px] text-emerald-400 font-semibold flex items-center justify-center gap-1 mt-1">
-                    <ShieldCheck className="w-3 h-3" />
-                    Official Student Gate Pass
-                  </span>
+                {/* Important Notice Box on VIP Pass & QR Issuance */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-400/30 text-amber-200 space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-amber-300">
+                    <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>Next Step: Payment Verification & Pass Issuance</span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Your registration has been logged in the committee database with payment status <strong className="text-amber-300 font-mono">PENDING</strong>.
+                  </p>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    In accordance with organizing protocols, your <strong>Official Scannable VIP Entry Pass & QR Code</strong> will be issued directly by your <strong>Class Division In-Charge / Admin</strong> once event contribution payment is verified.
+                  </p>
+                  <div className="pt-1 flex items-center gap-1.5 text-[11px] font-mono text-cyan-300">
+                    <Info className="w-3.5 h-3.5 shrink-0" />
+                    <span>Keep your Reference ID ({confirmedStudent.id}) handy when completing payment.</span>
+                  </div>
+                </div>
+
+                {/* Event Schedule Footer Note */}
+                <div className="pt-2 border-t border-slate-800/80 flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4 text-xs text-slate-400">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                    <span>Saturday, 28 Feb 2026</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                    <span>05:30 PM Onwards</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>
+                      {venueConfig.isTentative
+                        ? 'Lawn Destination (South Pune / Ambegaon)'
+                        : venueConfig.confirmedName}
+                    </span>
+                  </div>
                 </div>
 
               </div>
 
-              {/* Pass Barcode Footer */}
-              <div className="bg-midnight-950 p-3 sm:p-3.5 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-[10px] sm:text-xs text-slate-500 gap-1.5 text-center sm:text-left">
+              {/* Receipt Footer */}
+              <div className="bg-midnight-950 p-3 sm:p-4 border-t border-slate-800 flex items-center justify-between text-[10px] sm:text-xs text-slate-500">
                 <span className="font-mono">
-                  NON-TRANSFERABLE • PRESENT AT REGISTRATION CONCIERGE DESK
+                  APPLICATION FILED • PENDING ADMIN PASS RELEASE
                 </span>
-                <span className="text-[10px] sm:text-[11px] text-amber-300 font-medium font-cinzel">
+                <span className="text-amber-300 font-medium font-cinzel">
                   SSDS AMBEGAON 2026
                 </span>
               </div>
+
             </div>
           </div>
 
-          {/* Action Buttons for Confirmed Pass */}
+          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 no-print">
             <button
-              onClick={handlePrint}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold text-xs tracking-wider uppercase shadow-lg shadow-cyan-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 border border-cyan-400/40"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Print Official Pass</span>
-            </button>
-
-            <button
-              onClick={handleSharePass}
+              onClick={handleCopyReceipt}
               className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-amber-400/15 text-amber-300 border border-amber-400/40 text-xs font-semibold tracking-wider uppercase hover:bg-amber-400/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >
-              <Share2 className="w-4 h-4" />
-              <span>Share Pass Details</span>
+              {copiedReceipt ? (
+                <>
+                  <Check className="w-4 h-4 text-emerald-400" />
+                  <span>Copied to Clipboard!</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-4 h-4" />
+                  <span>Copy Reference Details</span>
+                </>
+              )}
             </button>
 
             <button
               onClick={handleResetForAnother}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl glass-panel text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 text-xs font-semibold tracking-wider uppercase transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold text-xs tracking-wider uppercase shadow-lg shadow-cyan-900/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 border border-cyan-400/40"
             >
               <RotateCcw className="w-4 h-4" />
-              <span>Register Another</span>
+              <span>Register Another Classmate</span>
+            </button>
+
+            <button
+              onClick={() => setActiveView('home')}
+              className="w-full sm:w-auto px-6 py-3.5 rounded-xl glass-panel text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 text-xs font-semibold tracking-wider uppercase transition-all flex items-center justify-center gap-2"
+            >
+              <span>Back to Home</span>
             </button>
           </div>
+
         </div>
       ) : (
         /* REGISTRATION FORM */
@@ -382,7 +363,7 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
               Class 10 Farewell Registration
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 mt-1.5 sm:mt-2 leading-relaxed">
-              Reserve your digital admission pass for the Sinhagad Spring Dale School Class of 2026 Farewell Gala. Please provide accurate details as printed on school records.
+              Reserve your spot for the Sinhagad Spring Dale School Class of 2026 Farewell Gala. Please provide authentic student details as registered in school records.
             </p>
           </div>
 
@@ -409,19 +390,20 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
                   type="text"
                   required
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  onChange={(e) => {
+                    setFullName(e.target.value);
+                    if (errors.fullName) setErrors({ ...errors, fullName: undefined });
+                  }}
                   placeholder="e.g. Aarav Sachin Deshmukh"
-                  className={`w-full pl-10 pr-4 py-3 sm:py-3.5 rounded-xl bg-midnight-900 border text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 transition-all ${
-                    errors.fullName
-                      ? 'border-red-500/60 focus:ring-red-500'
-                      : 'border-slate-800 focus:border-cyan-400 focus:ring-cyan-400/40'
+                  className={`w-full pl-10 pr-4 py-3 rounded-xl bg-midnight-900 border text-sm text-white placeholder-slate-500 focus:outline-none transition-colors ${
+                    errors.fullName ? 'border-red-500/80 focus:border-red-400' : 'border-slate-800 focus:border-cyan-400'
                   }`}
                 />
               </div>
               {errors.fullName && (
-                <p className="text-[11px] text-red-400 mt-1.5 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {errors.fullName}
+                <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  <span>{errors.fullName}</span>
                 </p>
               )}
             </div>
@@ -432,106 +414,101 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
                   Mobile Number <span className="text-cyan-400">*</span>
                 </label>
-                {mobileValidation && mobileValidation.isValid && (
-                  <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1 font-mono">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                    <span>{mobileValidation.operatorHint}</span>
-                  </span>
-                )}
+                <span className="text-[10px] text-slate-400 font-mono">10 digits • Starts with 6-9</span>
               </div>
 
-              <div className="flex">
-                <span className="inline-flex items-center px-3.5 sm:px-4 rounded-l-xl border border-r-0 border-slate-800 bg-midnight-950 text-slate-400 text-sm font-mono font-medium">
-                  +91
-                </span>
-                <div className="relative flex-1">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
-                    <Phone className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="tel"
-                    required
-                    maxLength={10}
-                    value={mobile}
-                    onChange={(e) => {
-                      const digitsOnly = e.target.value.replace(/\D/g, '');
-                      setMobile(digitsOnly);
-                      if (errors.mobile) setErrors({ ...errors, mobile: undefined });
-                    }}
-                    placeholder="9822014589"
-                    className={`w-full pl-9 sm:pl-10 pr-4 py-3 sm:py-3.5 rounded-r-xl bg-midnight-900 border text-sm text-white placeholder-slate-500 font-mono focus:outline-none focus:ring-1 transition-all ${
-                      errors.mobile
-                        ? 'border-red-500/60 focus:ring-red-500'
-                        : mobileValidation?.isValid
-                        ? 'border-emerald-500/60 focus:border-emerald-400 focus:ring-emerald-400/40'
-                        : 'border-slate-800 focus:border-cyan-400 focus:ring-cyan-400/40'
-                    }`}
-                  />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-mono text-sm font-semibold border-r border-slate-800 pr-2.5">
+                  <span className="text-cyan-400 mr-1">+91</span>
+                  <Phone className="w-3.5 h-3.5 text-slate-500" />
                 </div>
+
+                <input
+                  type="tel"
+                  required
+                  maxLength={10}
+                  value={mobile}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setMobile(val);
+                    if (errors.mobile) setErrors({ ...errors, mobile: undefined });
+                  }}
+                  placeholder="9822012345"
+                  className={`w-full pl-22 pr-4 py-3 rounded-xl bg-midnight-900 border text-sm text-white font-mono placeholder-slate-600 focus:outline-none transition-colors ${
+                    errors.mobile ? 'border-red-500/80 focus:border-red-400' : 'border-slate-800 focus:border-cyan-400'
+                  }`}
+                />
               </div>
 
-              {errors.mobile ? (
-                <p className="text-[11px] text-red-400 mt-1.5 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3 shrink-0" />
+              {/* Real-time Validation Feedback */}
+              {mobileValidation && (
+                <div className="mt-1.5">
+                  {mobileValidation.isValid ? (
+                    <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                      <span>Valid Indian Mobile Number ({mobileValidation.operatorHint})</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-xs text-red-400">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{mobileValidation.error}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {errors.mobile && !mobileValidation && (
+                <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" />
                   <span>{errors.mobile}</span>
-                </p>
-              ) : mobileValidation?.isValid ? (
-                <p className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3 shrink-0" />
-                  <span>Real Indian mobile verified: {mobileValidation.telecomSeries}</span>
-                </p>
-              ) : (
-                <p className="text-[10px] sm:text-[11px] text-slate-500 mt-1">
-                  System verifies genuine Indian mobile numbers (must start with 6, 7, 8, or 9).
                 </p>
               )}
             </div>
 
-            {/* 3. Class & 4. Division Selection (Div A through Div G) */}
-            <div className="grid grid-cols-1 gap-4 sm:gap-6">
+            {/* 3. Class & Division Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              
+              {/* Class (Pre-filled as Class 10) */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                  Standard / Class
+                  Academic Standard
                 </label>
-                <div className="flex items-center gap-2 p-3 sm:p-3.5 rounded-xl bg-midnight-950 border border-slate-800 text-slate-300 text-sm font-medium">
-                  <GraduationCap className="w-4 h-4 text-cyan-400 shrink-0" />
-                  <span>Class 10 (Class X)</span>
-                  <span className="ml-auto text-[10px] uppercase font-bold text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/30 shrink-0">
-                    Batch 2026
-                  </span>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                    <GraduationCap className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    disabled
+                    value={className}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-midnight-950 border border-slate-800 text-sm text-cyan-300 font-semibold cursor-not-allowed select-none"
+                  />
                 </div>
               </div>
 
+              {/* Division (Div A to Div G) */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                  Division (Section) <span className="text-cyan-400">*</span>
+                  Division (Div) <span className="text-cyan-400">*</span>
                 </label>
-                <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5 sm:gap-2">
+                <select
+                  value={division}
+                  onChange={(e) => setDivision(e.target.value as Division)}
+                  className="w-full px-4 py-3 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white focus:outline-none focus:border-cyan-400"
+                >
                   {availableDivisions.map((div) => (
-                    <button
-                      key={div}
-                      type="button"
-                      onClick={() => setDivision(div)}
-                      className={`py-3 sm:py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${
-                        division === div
-                          ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-md shadow-cyan-900/50'
-                          : 'bg-midnight-900 text-slate-400 border-slate-800 active:bg-slate-800 hover:text-white hover:border-slate-700'
-                      }`}
-                    >
-                      {div.replace('Div ', '')}
-                    </button>
+                    <option key={div} value={div} className="bg-midnight-950 text-white">
+                      {div} (Class X)
+                    </option>
                   ))}
-                </div>
-                <span className="text-[11px] text-slate-500 block mt-1.5">
-                  Selected Division: <strong className="text-cyan-300">{division}</strong>
-                </span>
+                </select>
               </div>
             </div>
 
-            {/* Optional: Song Request */}
+            {/* 4. Optional Song Request */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                Lawn Disco Song Request (Optional)
+                Dance Floor Song Request <span className="text-slate-500 font-normal lowercase">(optional)</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -541,53 +518,45 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
                   type="text"
                   value={songRequest}
                   onChange={(e) => setSongRequest(e.target.value)}
-                  placeholder="e.g. A Sky Full of Stars / Ilahi / Memories"
-                  className="w-full pl-10 pr-4 py-3 sm:py-3.5 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/40 transition-all"
+                  placeholder="e.g. Memories - Maroon 5, Ilahi, Sky Full of Stars"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
                 />
               </div>
             </div>
 
-            {/* Optional: Favorite SSDS Ambegaon Memory */}
+            {/* 5. Optional Favorite School Memory */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                Cherished SSDS Memory (For Yearbook Commemorative Reel)
+                Cherished School Memory <span className="text-slate-500 font-normal lowercase">(optional)</span>
               </label>
               <textarea
                 rows={2}
                 value={favoriteMemory}
                 onChange={(e) => setFavoriteMemory(e.target.value)}
-                placeholder="Share a favorite moment, sports victory, teacher quote, or corridor memory..."
-                className="w-full px-4 py-3 sm:py-3.5 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/40 transition-all"
+                placeholder="Share a sentence about your favorite school day, teacher, or memory at SSDS Ambegaon..."
+                className="w-full px-4 py-3 rounded-xl bg-midnight-900 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
               />
             </div>
 
             {/* Submit Button */}
-            <div className="pt-2 sm:pt-4">
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-4 rounded-xl text-xs sm:text-sm font-semibold tracking-wider uppercase bg-gradient-to-r from-cyan-600 via-blue-600 to-cyan-500 text-white shadow-xl shadow-cyan-900/40 hover:shadow-cyan-500/25 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 border border-cyan-400/40 disabled:opacity-50"
+                className="w-full py-4 rounded-xl text-xs sm:text-sm font-bold uppercase tracking-wider bg-gradient-to-r from-cyan-600 via-blue-600 to-cyan-600 bg-size-200 text-white shadow-xl shadow-cyan-950/60 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 border border-cyan-400/40 disabled:opacity-50"
               >
                 {isSubmitting ? (
-                  <span>Verifying & Generating Official Pass...</span>
+                  <span>Registering Student...</span>
                 ) : (
                   <>
-                    <Ticket className="w-4 h-4 text-cyan-200" />
-                    <span>Confirm Registration & Generate Digital Pass</span>
+                    <Ticket className="w-4 h-4" />
+                    <span>Submit Student Registration</span>
                   </>
                 )}
               </button>
             </div>
 
-            <div className="flex items-center justify-center gap-1.5 text-[10px] sm:text-[11px] text-slate-500 pt-1 text-center">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>
-                Authorized portal for Sinhagad Spring Dale School, Ambegaon (Class of 2026).
-              </span>
-            </div>
-
           </form>
-
         </div>
       )}
 
