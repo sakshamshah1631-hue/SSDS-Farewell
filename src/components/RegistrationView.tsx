@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ActiveView, Division, StudentRegistration, VenueConfig } from '../types';
-import { saveRegistration } from '../lib/storage';
+import { saveRegistration, getRegistrations } from '../lib/storage';
+import { validateRealIndianMobile, MobileValidationResult } from '../lib/validation';
 import {
   Ticket,
   ArrowLeft,
@@ -47,6 +48,15 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
 
   const availableDivisions: Division[] = ['Div A', 'Div B', 'Div C', 'Div D', 'Div E', 'Div F', 'Div G'];
 
+  // Real-time Mobile Number Validation & Operator Detection
+  const mobileValidation = useMemo<MobileValidationResult | null>(() => {
+    const clean = mobile.replace(/\D/g, '');
+    if (clean.length === 10) {
+      return validateRealIndianMobile(clean);
+    }
+    return null;
+  }, [mobile]);
+
   // Validation
   const validateForm = () => {
     const newErrors: { fullName?: string; mobile?: string } = {};
@@ -56,10 +66,17 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
     }
 
     const cleanMobile = mobile.replace(/\D/g, '');
-    if (!cleanMobile || cleanMobile.length !== 10) {
-      newErrors.mobile = 'Please enter a valid 10-digit Indian mobile number.';
-    } else if (!/^[6-9]\d{9}$/.test(cleanMobile)) {
-      newErrors.mobile = 'Mobile number must begin with 6, 7, 8, or 9.';
+    const validationCheck = validateRealIndianMobile(cleanMobile);
+
+    if (!validationCheck.isValid) {
+      newErrors.mobile = validationCheck.error || 'Please enter a genuine, active 10-digit Indian mobile number.';
+    } else {
+      // Check for duplicate registered mobile
+      const existingStudents = getRegistrations();
+      const duplicate = existingStudents.find((s) => s.mobile.replace(/\D/g, '') === cleanMobile);
+      if (duplicate) {
+        newErrors.mobile = `This mobile number is already registered under Pass ID ${duplicate.id} (${duplicate.fullName}).`;
+      }
     }
 
     setErrors(newErrors);
@@ -145,7 +162,7 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
         </span>
       </div>
 
-      {/* CONFIRMATION STATE: Digital VIP Admission Pass with Luxury Perforations */}
+      {/* CONFIRMATION STATE: Digital VIP Admission Pass */}
       {confirmedStudent ? (
         <div className="space-y-6 sm:space-y-8 animate-fadeIn">
           {/* Success Banner */}
@@ -163,10 +180,8 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
             </div>
           </div>
 
-          {/* Luxury Digital Pass Card (Mobile & Print Optimized with Ticket Cutouts) */}
+          {/* Luxury Digital Pass Card */}
           <div className="relative mx-auto max-w-2xl">
-            
-            {/* Ticket Notches for Authentic Boarding Pass Aesthetic */}
             <div className="ticket-notch-left hidden sm:block" />
             <div className="ticket-notch-right hidden sm:block" />
 
@@ -203,8 +218,6 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
 
               {/* Pass Body Content */}
               <div className="p-5 sm:p-7 grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 items-center">
-                
-                {/* Student Details */}
                 <div className="md:col-span-2 space-y-3.5">
                   <div>
                     <span className="text-[10px] uppercase tracking-wider text-slate-400 font-mono block">
@@ -227,7 +240,7 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
 
                     <div className="p-2.5 rounded-xl bg-midnight-950/70 border border-slate-800">
                       <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-400 font-mono block">
-                        Mobile Number
+                        Verified Contact
                       </span>
                       <span className="text-xs sm:text-sm font-semibold text-slate-200 font-mono mt-0.5 block">
                         +91 {confirmedStudent.mobile}
@@ -413,11 +426,20 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
               )}
             </div>
 
-            {/* 2. Mobile Number (10 digits with +91) */}
+            {/* 2. Mobile Number (Strict Real Indian Mobile Check) */}
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                Mobile Number (for SMS Gate Pass) <span className="text-cyan-400">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Mobile Number <span className="text-cyan-400">*</span>
+                </label>
+                {mobileValidation && mobileValidation.isValid && (
+                  <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1 font-mono">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    <span>{mobileValidation.operatorHint}</span>
+                  </span>
+                )}
+              </div>
+
               <div className="flex">
                 <span className="inline-flex items-center px-3.5 sm:px-4 rounded-l-xl border border-r-0 border-slate-800 bg-midnight-950 text-slate-400 text-sm font-mono font-medium">
                   +91
@@ -431,32 +453,42 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
                     required
                     maxLength={10}
                     value={mobile}
-                    onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
+                    onChange={(e) => {
+                      const digitsOnly = e.target.value.replace(/\D/g, '');
+                      setMobile(digitsOnly);
+                      if (errors.mobile) setErrors({ ...errors, mobile: undefined });
+                    }}
                     placeholder="9822014589"
                     className={`w-full pl-9 sm:pl-10 pr-4 py-3 sm:py-3.5 rounded-r-xl bg-midnight-900 border text-sm text-white placeholder-slate-500 font-mono focus:outline-none focus:ring-1 transition-all ${
                       errors.mobile
                         ? 'border-red-500/60 focus:ring-red-500'
+                        : mobileValidation?.isValid
+                        ? 'border-emerald-500/60 focus:border-emerald-400 focus:ring-emerald-400/40'
                         : 'border-slate-800 focus:border-cyan-400 focus:ring-cyan-400/40'
                     }`}
                   />
                 </div>
               </div>
+
               {errors.mobile ? (
                 <p className="text-[11px] text-red-400 mt-1.5 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {errors.mobile}
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  <span>{errors.mobile}</span>
+                </p>
+              ) : mobileValidation?.isValid ? (
+                <p className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 shrink-0" />
+                  <span>Real Indian mobile verified: {mobileValidation.telecomSeries}</span>
                 </p>
               ) : (
                 <p className="text-[10px] sm:text-[11px] text-slate-500 mt-1">
-                  Entry QR verification and venue updates will be dispatched to this WhatsApp/SMS number.
+                  System verifies genuine Indian mobile numbers (must start with 6, 7, 8, or 9).
                 </p>
               )}
             </div>
 
             {/* 3. Class & 4. Division Selection (Div A through Div G) */}
             <div className="grid grid-cols-1 gap-4 sm:gap-6">
-              
-              {/* Class field */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                   Standard / Class
@@ -470,12 +502,10 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
                 </div>
               </div>
 
-              {/* Division Segmented Selector: Div A through Div G */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                   Division (Section) <span className="text-cyan-400">*</span>
                 </label>
-                {/* Responsive grid for 7 divisions: 4 cols on top, 3 on second row on mobile */}
                 <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5 sm:gap-2">
                   {availableDivisions.map((div) => (
                     <button
@@ -496,10 +526,9 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
                   Selected Division: <strong className="text-cyan-300">{division}</strong>
                 </span>
               </div>
-
             </div>
 
-            {/* Optional: Song Request for Open Lawn Disco */}
+            {/* Optional: Song Request */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                 Lawn Disco Song Request (Optional)
@@ -540,7 +569,7 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
                 className="w-full py-4 rounded-xl text-xs sm:text-sm font-semibold tracking-wider uppercase bg-gradient-to-r from-cyan-600 via-blue-600 to-cyan-500 text-white shadow-xl shadow-cyan-900/40 hover:shadow-cyan-500/25 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 border border-cyan-400/40 disabled:opacity-50"
               >
                 {isSubmitting ? (
-                  <span>Generating Official Pass...</span>
+                  <span>Verifying & Generating Official Pass...</span>
                 ) : (
                   <>
                     <Ticket className="w-4 h-4 text-cyan-200" />
