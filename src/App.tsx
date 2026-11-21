@@ -11,6 +11,7 @@ import { Reflections } from './components/Reflections';
 import { RegistrationView } from './components/RegistrationView';
 import { AdminView } from './components/AdminView';
 import { PassModal } from './components/PassModal';
+import { MobileQuickBar } from './components/MobileQuickBar';
 import { Footer } from './components/Footer';
 
 export const App: React.FC = () => {
@@ -33,7 +34,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col font-sans relative selection:bg-cyan-500/20 selection:text-cyan-200">
+    <div className="min-h-screen bg-[#050811] text-slate-100 flex flex-col font-sans relative selection:bg-cyan-500/20 selection:text-cyan-200">
       
       {/* Dynamic Ambient Background: Starlight Motes, Bokeh Orbs & Ribbons (Strictly NO Purple) */}
       <AtmosphericBackground />
@@ -46,7 +47,7 @@ export const App: React.FC = () => {
       />
 
       {/* Main Routed Content Views */}
-      <main className="flex-1 relative z-10">
+      <main className="flex-1 relative z-10 pb-12 sm:pb-0">
         {activeView === 'home' && (
           <div className="space-y-4">
             <Hero
@@ -84,6 +85,13 @@ export const App: React.FC = () => {
         student={passModalStudent}
         venueConfig={venueConfig}
         onClose={() => setPassModalStudent(null)}
+      />
+
+      {/* Mobile Floating Quick Action Pill */}
+      <MobileQuickBar
+        activeView={activeView}
+        setActiveView={setActiveView}
+        registeredCount={registrations.length}
       />
 
       {/* Formal Institutional Footer */}
