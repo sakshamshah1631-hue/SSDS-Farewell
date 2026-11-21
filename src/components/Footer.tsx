@@ -16,7 +16,7 @@ export const Footer: React.FC<FooterProps> = ({ setActiveView }) => {
   };
 
   return (
-    <footer className="bg-midnight-950 border-t border-slate-800/80 pt-12 sm:pt-16 pb-12 px-4 sm:px-6 lg:px-8 relative text-xs text-slate-400">
+    <footer className="bg-midnight-950 border-t border-slate-800/80 pt-10 sm:pt-16 pb-28 sm:pb-12 px-3 sm:px-6 lg:px-8 relative text-xs text-slate-400">
       
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 sm:gap-10 pb-10 sm:pb-12 border-b border-slate-800">
         

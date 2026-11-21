@@ -40,12 +40,14 @@ export const PassModal: React.FC<PassModalProps> = ({
   const [isGenerating, setIsGenerating] = useState<boolean>(true);
   const [isDownloadingTicket, setIsDownloadingTicket] = useState<boolean>(false);
   const ticketCardRef = useRef<HTMLDivElement>(null);
+  const issuedStudentRef = useRef<string | null>(null);
 
   // Generate QR Code that redirects directly to the student's Ticket Image
   useEffect(() => {
     if (!student) return;
 
-    if (onPassIssued) {
+    if (onPassIssued && issuedStudentRef.current !== student.id) {
+      issuedStudentRef.current = student.id;
       onPassIssued(student.id);
     }
 

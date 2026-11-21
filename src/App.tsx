@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ActiveView, StudentRegistration, VenueConfig } from './types';
 import {
   getRegistrations,
@@ -47,9 +47,9 @@ export const App: React.FC = () => {
     setVenueConfig(newConfig);
   };
 
-  const handlePassIssued = () => {
+  const handlePassIssued = useCallback(() => {
     setRegistrations(getRegistrations());
-  };
+  }, []);
 
   const handleCloseScannedTicket = () => {
     // Clear URL query without full reload
@@ -67,7 +67,7 @@ export const App: React.FC = () => {
   // If a student or guard scans a QR code, immediately render the full Ticket Image view!
   if (scannedTicketId) {
     return (
-      <div className="min-h-screen bg-[#050811] text-slate-100 flex flex-col font-sans relative selection:bg-cyan-500/20 selection:text-cyan-200">
+      <div className="min-h-screen bg-[#050811] text-slate-100 flex flex-col font-sans relative selection:bg-cyan-500/20 selection:text-cyan-200 overflow-x-hidden max-w-full">
         <AtmosphericBackground />
         <TicketView
           passId={scannedTicketId}
@@ -78,7 +78,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#050811] text-slate-100 flex flex-col font-sans relative selection:bg-cyan-500/20 selection:text-cyan-200">
+    <div className="min-h-screen bg-[#050811] text-slate-100 flex flex-col font-sans relative selection:bg-cyan-500/20 selection:text-cyan-200 overflow-x-hidden max-w-full">
       
       {/* Dynamic Ambient Background: Starlight Motes, Bokeh Orbs & Ribbons (Strictly NO Purple) */}
       <AtmosphericBackground />

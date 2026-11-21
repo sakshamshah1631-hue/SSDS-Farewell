@@ -77,15 +77,16 @@ export const Hero: React.FC<HeroProps> = ({
       <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
         
         {/* Formal Institutional Badge */}
-        <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full glass-panel border border-cyan-400/30 text-cyan-200 text-[10px] sm:text-xs tracking-widest uppercase font-semibold mb-5 sm:mb-6 shadow-sm max-w-[95%]">
-          <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse shrink-0" />
-          <span className="truncate">Sinhagad Spring Dale School, Ambegaon</span>
+        <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 rounded-full glass-panel border border-cyan-400/30 text-cyan-200 text-[10px] sm:text-xs tracking-wider uppercase font-semibold mb-4 sm:mb-6 shadow-sm max-w-full">
+          <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-300 animate-pulse shrink-0" />
+          <span className="hidden sm:inline">Sinhagad Spring Dale School, Ambegaon</span>
+          <span className="sm:hidden font-bold">SSDS Ambegaon</span>
           <span className="w-1 h-1 rounded-full bg-cyan-400 shrink-0" />
           <span className="text-amber-300 font-bold shrink-0">Class of 2026</span>
         </div>
 
         {/* Grand Headline: Editorial Typography Pairing */}
-        <h1 className="font-editorial-serif text-3xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white mb-3 sm:mb-4 leading-[1.12]">
+        <h1 className="font-editorial-serif text-2xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white mb-2.5 sm:mb-4 leading-tight">
           The Valedictory
           <span className="block italic font-normal text-gradient-cyan">
             Farewell Gala
@@ -93,13 +94,13 @@ export const Hero: React.FC<HeroProps> = ({
         </h1>
 
         {/* Dignified Subheading */}
-        <p className="max-w-2xl text-xs sm:text-lg md:text-xl text-slate-300 font-light leading-relaxed mb-6 sm:mb-8 px-2">
+        <p className="max-w-2xl text-xs sm:text-base md:text-lg text-slate-300 font-light leading-relaxed mb-5 sm:mb-8 px-2">
           Honoring the camaraderie, triumphs, and unforgettable journey of Class X.
           An evening of dinner, awards, open-lawn disco, and timeless memories under starlit skies.
         </p>
 
         {/* Live Countdown Grid - Mobile Optimized (Compact padding & typography on mobile) */}
-        <div className="w-full max-w-xl grid grid-cols-4 gap-2 sm:gap-4 mb-8 sm:mb-10">
+        <div className="w-full max-w-xl grid grid-cols-4 gap-1.5 sm:gap-4 mb-6 sm:mb-10">
           {[
             { label: 'Days', value: timeLeft.days },
             { label: 'Hours', value: timeLeft.hours },
@@ -110,10 +111,10 @@ export const Hero: React.FC<HeroProps> = ({
               key={idx}
               className="glass-panel rounded-xl p-2 sm:p-4 text-center border border-cyan-500/20 shadow-lg relative overflow-hidden"
             >
-              <div className="text-xl sm:text-3xl md:text-4xl font-bold text-white font-cinzel tracking-wider">
+              <div className="text-lg sm:text-3xl md:text-4xl font-bold text-white font-cinzel tracking-wider">
                 {String(item.value).padStart(2, '0')}
               </div>
-              <div className="text-[9px] sm:text-xs uppercase tracking-widest text-slate-400 font-medium mt-0.5 sm:mt-1">
+              <div className="text-[8.5px] sm:text-xs uppercase tracking-wider text-slate-400 font-medium mt-0.5 sm:mt-1">
                 {item.label}
               </div>
               <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-16 h-12 bg-cyan-500/10 blur-xl pointer-events-none" />
@@ -122,15 +123,15 @@ export const Hero: React.FC<HeroProps> = ({
         </div>
 
         {/* Live Status Pill: Tentative Venue Status */}
-        <div className="mb-8 sm:mb-10 w-full max-w-2xl px-1">
-          <div className="p-3.5 sm:p-4 rounded-xl glass-panel-gold border border-amber-400/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-amber-400/10 border border-amber-400/30 flex items-center justify-center shrink-0">
+        <div className="mb-6 sm:mb-10 w-full max-w-2xl px-1">
+          <div className="p-3 sm:p-4 rounded-xl glass-panel-gold border border-amber-400/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3 text-left">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-amber-400/10 border border-amber-400/30 flex items-center justify-center shrink-0">
                 <MapPin className="w-4 h-4 text-amber-300" />
               </div>
               <div>
-                <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-amber-300 font-bold flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping inline-block" />
+                <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-amber-300 font-bold flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping inline-block" />
                   {venueConfig.isTentative ? 'Venue: Tentative (To Be Announced)' : 'Venue: Confirmed Destination'}
                 </div>
                 <div className="text-xs text-slate-300 font-normal mt-0.5 leading-snug">
@@ -170,44 +171,44 @@ export const Hero: React.FC<HeroProps> = ({
         </div>
 
         {/* Key Event Highlights Row - Responsive 2x2 on mobile, 4 on desktop */}
-        <div className="mt-10 sm:mt-14 pt-6 sm:pt-8 border-t border-slate-800/80 w-full grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 text-left">
-          <div className="flex items-center space-x-2.5 sm:space-x-3">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-center text-cyan-400 shrink-0">
-              <Users className="w-4 h-4" />
+        <div className="mt-8 sm:mt-14 pt-5 sm:pt-8 border-t border-slate-800/80 w-full grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-6 text-left">
+          <div className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-0 rounded-xl bg-midnight-950/60 sm:bg-transparent border border-slate-800/70 sm:border-0">
+            <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-center text-cyan-400 shrink-0">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
-            <div>
-              <div className="text-xs font-semibold text-white">Class X Batch</div>
-              <div className="text-[10px] sm:text-[11px] text-slate-400">Div A through G</div>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2.5 sm:space-x-3">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-center text-amber-400 shrink-0">
-              <Calendar className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-white">Grand Evening</div>
-              <div className="text-[10px] sm:text-[11px] text-slate-400">05:30 PM Onwards</div>
+            <div className="min-w-0">
+              <div className="text-[11px] sm:text-xs font-semibold text-white truncate">Class X Batch</div>
+              <div className="text-[9.5px] sm:text-[11px] text-slate-400 truncate">Div A through G</div>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2.5 sm:space-x-3">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-center text-cyan-400 shrink-0">
-              <Sparkles className="w-4 h-4" />
+          <div className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-0 rounded-xl bg-midnight-950/60 sm:bg-transparent border border-slate-800/70 sm:border-0">
+            <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-center text-amber-400 shrink-0">
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
-            <div>
-              <div className="text-xs font-semibold text-white">Lawn Celebration</div>
-              <div className="text-[10px] sm:text-[11px] text-slate-400">Gala & Disco Stage</div>
+            <div className="min-w-0">
+              <div className="text-[11px] sm:text-xs font-semibold text-white truncate">Grand Evening</div>
+              <div className="text-[9.5px] sm:text-[11px] text-slate-400 truncate">05:30 PM Onwards</div>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2.5 sm:space-x-3">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-center text-emerald-400 shrink-0">
-              <ShieldCheck className="w-4 h-4" />
+          <div className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-0 rounded-xl bg-midnight-950/60 sm:bg-transparent border border-slate-800/70 sm:border-0">
+            <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-center text-cyan-400 shrink-0">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
-            <div>
-              <div className="text-xs font-semibold text-white">Secure Admission</div>
-              <div className="text-[10px] sm:text-[11px] text-slate-400">Digital Pass Verification</div>
+            <div className="min-w-0">
+              <div className="text-[11px] sm:text-xs font-semibold text-white truncate">Lawn Celebration</div>
+              <div className="text-[9.5px] sm:text-[11px] text-slate-400 truncate">Gala & Disco</div>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-0 rounded-xl bg-midnight-950/60 sm:bg-transparent border border-slate-800/70 sm:border-0">
+            <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-center text-emerald-400 shrink-0">
+              <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[11px] sm:text-xs font-semibold text-white truncate">VIP Pass Gate</div>
+              <div className="text-[9.5px] sm:text-[11px] text-slate-400 truncate">Digital QR Entry</div>
             </div>
           </div>
         </div>

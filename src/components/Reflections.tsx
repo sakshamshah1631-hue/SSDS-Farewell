@@ -34,43 +34,43 @@ export const Reflections: React.FC = () => {
   ];
 
   return (
-    <section id="reflections" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
-      <div className="text-center max-w-3xl mx-auto mb-14">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-500/20 text-cyan-300 text-xs tracking-widest uppercase font-semibold mb-3">
+    <section id="reflections" className="py-12 sm:py-20 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto relative">
+      <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-500/20 text-cyan-300 text-[10px] sm:text-xs tracking-wider uppercase font-semibold mb-2.5 sm:mb-3">
           <Award className="w-3.5 h-3.5 text-amber-300" />
           <span>Voices of the Batch</span>
         </div>
-        <h2 className="font-editorial-serif text-3xl sm:text-5xl font-bold text-white tracking-tight">
+        <h2 className="font-editorial-serif text-2xl sm:text-5xl font-bold text-white tracking-tight">
           Class 10 Reflections
         </h2>
-        <p className="mt-4 text-slate-400 text-sm sm:text-base leading-relaxed">
+        <p className="mt-3 sm:mt-4 text-slate-400 text-xs sm:text-base leading-relaxed px-2">
           Ten years of shared academic rigor, athletic spirit, and lifelong friendships at Sinhagad Spring Dale School, Ambegaon.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8 max-w-5xl mx-auto">
         {testimonials.map((item, index) => (
           <div
             key={index}
-            className="glass-panel rounded-2xl p-7 border border-slate-800 hover:border-cyan-500/30 transition-all duration-300 relative group flex flex-col justify-between"
+            className="glass-panel rounded-2xl p-4 sm:p-7 border border-slate-800 hover:border-cyan-500/30 transition-all duration-300 relative group flex flex-col justify-between"
           >
             <div>
-              <Quote className="w-8 h-8 text-cyan-500/20 mb-4 group-hover:text-cyan-400/40 transition-colors" />
-              <p className="text-sm sm:text-base text-slate-300 font-light italic leading-relaxed">
+              <Quote className="w-7 h-7 sm:w-8 sm:h-8 text-cyan-500/20 mb-3 sm:mb-4 group-hover:text-cyan-400/40 transition-colors" />
+              <p className="text-xs sm:text-base text-slate-300 font-light italic leading-relaxed">
                 "{item.quote}"
               </p>
             </div>
 
-            <div className="mt-6 pt-5 border-t border-slate-800/80 flex items-center justify-between">
+            <div className="mt-5 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <div>
-                <h4 className="text-sm font-bold text-white font-editorial-serif tracking-wide">
+                <h4 className="text-xs sm:text-sm font-bold text-white font-editorial-serif tracking-wide">
                   {item.name}
                 </h4>
-                <p className="text-xs text-amber-300/90 font-medium">
+                <p className="text-[11px] sm:text-xs text-amber-300/90 font-medium">
                   {item.division}
                 </p>
               </div>
-              <span className="text-[11px] text-slate-500 font-mono tracking-wider">
+              <span className="text-[10px] sm:text-[11px] text-slate-400 font-mono tracking-wider bg-slate-900/60 px-2 py-0.5 rounded border border-slate-800 self-start sm:self-auto">
                 {item.role}
               </span>
             </div>

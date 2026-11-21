@@ -149,7 +149,7 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
     <div className="py-6 sm:py-12 px-3 sm:px-6 lg:px-8 max-w-4xl mx-auto min-h-[85vh]">
       
       {/* Top Navigation Back */}
-      <div className="flex items-center justify-between mb-5 sm:mb-8 no-print">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4 sm:mb-8 no-print">
         <button
           onClick={() => setActiveView('home')}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-cyan-300 transition-colors uppercase tracking-wider py-1"
@@ -158,8 +158,8 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
           <span>Return to Overview</span>
         </button>
 
-        <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-widest text-slate-500">
-          SSDS / FAREWELL / REGISTRATION
+        <span className="text-[9px] sm:text-[11px] font-mono uppercase tracking-wider text-slate-500">
+          SSDS • FAREWELL 2026 REGISTRATION
         </span>
       </div>
 
@@ -434,7 +434,7 @@ export const RegistrationView: React.FC<RegistrationViewProps> = ({
                     if (errors.mobile) setErrors({ ...errors, mobile: undefined });
                   }}
                   placeholder="9822012345"
-                  className={`w-full pl-22 pr-4 py-3 rounded-xl bg-midnight-900 border text-sm text-white font-mono placeholder-slate-600 focus:outline-none transition-colors ${
+                  className={`w-full pl-[78px] pr-4 py-3 rounded-xl bg-midnight-900 border text-sm text-white font-mono placeholder-slate-600 focus:outline-none transition-colors ${
                     errors.mobile ? 'border-red-500/80 focus:border-red-400' : 'border-slate-800 focus:border-cyan-400'
                   }`}
                 />

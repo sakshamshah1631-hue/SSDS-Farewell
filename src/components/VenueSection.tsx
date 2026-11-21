@@ -37,16 +37,16 @@ export const VenueSection: React.FC<VenueSectionProps> = ({ venueConfig }) => {
       </div>
 
       {/* Main Venue Status Presentation Card */}
-      <div className="max-w-4xl mx-auto glass-panel-gold rounded-2xl sm:rounded-3xl p-5 sm:p-10 border border-amber-400/30 shadow-2xl relative overflow-hidden">
+      <div className="max-w-4xl mx-auto glass-panel-gold rounded-2xl sm:rounded-3xl p-4 sm:p-10 border border-amber-400/30 shadow-2xl relative overflow-hidden">
         
         {/* Subtle decorative glow */}
         <div className="absolute top-0 right-0 w-36 sm:w-48 h-36 sm:h-48 bg-cyan-500/10 blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-amber-400/20">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-6 pb-5 sm:pb-8 border-b border-amber-400/20">
           <div>
             {/* Status Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-amber-400/15 border border-amber-400/40 text-amber-300 mb-2.5 shadow-inner">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping inline-block" />
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full text-[9.5px] sm:text-xs font-bold uppercase tracking-wider bg-amber-400/15 border border-amber-400/40 text-amber-300 mb-2 sm:mb-2.5 shadow-inner">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping inline-block" />
               <span>
                 {venueConfig.isTentative
                   ? 'Venue: Tentative (To Be Announced)'
@@ -54,13 +54,13 @@ export const VenueSection: React.FC<VenueSectionProps> = ({ venueConfig }) => {
               </span>
             </div>
 
-            <h3 className="text-xl sm:text-3xl font-bold text-white font-editorial-serif">
+            <h3 className="text-lg sm:text-3xl font-bold text-white font-editorial-serif">
               {venueConfig.isTentative
                 ? 'Open-Air Lawn Destination & Banquet Grounds'
                 : venueConfig.confirmedName}
             </h3>
 
-            <p className="text-xs sm:text-sm text-cyan-300/90 font-medium tracking-wide mt-1.5 flex items-center gap-1.5">
+            <p className="text-xs sm:text-sm text-cyan-300/90 font-medium tracking-wide mt-1 flex items-center gap-1.5">
               <Compass className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
               <span>{venueConfig.locationArea}</span>
             </p>
@@ -68,12 +68,12 @@ export const VenueSection: React.FC<VenueSectionProps> = ({ venueConfig }) => {
 
           <div className="shrink-0 flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end pt-2 sm:pt-0 border-t border-slate-800/80 sm:border-0">
             <div className="text-left sm:text-right">
-              <div className="text-[10px] text-slate-400 uppercase tracking-widest">
-                Notification Status
+              <div className="text-[10px] text-slate-400 uppercase tracking-wider">
+                Broadcast Status
               </div>
               <div className="text-xs font-semibold text-emerald-400 flex items-center gap-1 mt-0.5">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>SMS / WhatsApp Broadcast Ready</span>
+                <span>Portal Live Sync Active</span>
               </div>
             </div>
           </div>
@@ -146,11 +146,11 @@ export const VenueSection: React.FC<VenueSectionProps> = ({ venueConfig }) => {
         </div>
 
         {/* Footer Guarantee */}
-        <div className="mt-6 pt-3 sm:pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-slate-400 gap-2.5 bg-slate-900/40 p-3.5 sm:p-4 rounded-xl border border-slate-800">
+        <div className="mt-6 pt-3 sm:pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-slate-400 gap-2.5 bg-slate-900/40 p-3 sm:p-4 rounded-xl border border-slate-800">
           <div className="flex items-center gap-2">
             <Bell className="w-4 h-4 text-amber-300 shrink-0" />
             <span className="text-[11px] sm:text-xs">
-              All students registered on this portal will receive instant SMS & WhatsApp verification when the final venue gate pass is issued.
+              All students registered on this portal will receive instant digital pass updates when the final venue gate coordinates are announced.
             </span>
           </div>
           <div className="text-[10px] sm:text-[11px] text-amber-300 font-medium shrink-0">

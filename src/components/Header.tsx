@@ -75,11 +75,11 @@ export const Header: React.FC<HeaderProps> = ({
               SSDS
             </div>
 
-            <div className="flex flex-col">
-              <span className="font-editorial-serif text-base sm:text-lg font-bold tracking-tight text-white group-hover:text-cyan-200 transition-colors">
+            <div className="flex flex-col min-w-0">
+              <span className="font-editorial-serif text-sm sm:text-lg font-bold tracking-tight text-white group-hover:text-cyan-200 transition-colors truncate">
                 Spring Dale School
               </span>
-              <span className="text-[10px] sm:text-[11px] uppercase tracking-widest text-slate-400 font-mono">
+              <span className="text-[9px] sm:text-[11px] uppercase tracking-wider text-slate-400 font-mono truncate max-w-[190px] sm:max-w-none">
                 Ambegaon, Pune • Class of 2026
               </span>
             </div>

@@ -99,8 +99,8 @@ export const Itinerary: React.FC = () => {
 
                 {/* Content Box */}
                 <div className={`w-full sm:w-1/2 ${isEven ? 'sm:pl-10 text-left' : 'sm:pr-10 text-left'}`}>
-                  <div className="glass-panel rounded-2xl p-5 sm:p-7 border border-slate-800 hover:border-cyan-500/30 transition-all duration-300 group hover:shadow-xl hover:shadow-cyan-950/30">
-                    <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="glass-panel rounded-2xl p-4 sm:p-7 border border-slate-800 hover:border-cyan-500/30 transition-all duration-300 group hover:shadow-xl hover:shadow-cyan-950/30">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2">
                       <span className="text-[11px] sm:text-xs font-bold text-cyan-300 tracking-wider uppercase flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
                         <span>{item.time}</span>
@@ -133,18 +133,18 @@ export const Itinerary: React.FC = () => {
       </div>
 
       {/* Dress Code & Protocol Card */}
-      <div className="mt-10 sm:mt-16 max-w-4xl mx-auto glass-panel rounded-2xl p-5 sm:p-8 border border-slate-800">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-6 pb-5 sm:pb-6 border-b border-slate-800">
+      <div className="mt-10 sm:mt-16 max-w-4xl mx-auto glass-panel rounded-2xl p-4 sm:p-8 border border-slate-800">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-6 pb-4 sm:pb-6 border-b border-slate-800">
           <div>
-            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-300 uppercase tracking-widest mb-1">
+            <div className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-semibold text-amber-300 uppercase tracking-wider mb-1">
               <Sparkles className="w-3.5 h-3.5 shrink-0" />
               <span>Official Protocol & Dress Code</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-bold text-white font-editorial-serif">
+            <h3 className="text-base sm:text-xl font-bold text-white font-editorial-serif">
               Gala Standards for the Class of 2026
             </h3>
           </div>
-          <div className="px-3 py-1 rounded-lg bg-amber-400/10 border border-amber-400/30 text-amber-200 text-[11px] sm:text-xs font-semibold uppercase tracking-wider">
+          <div className="px-2.5 py-1 rounded-lg bg-amber-400/10 border border-amber-400/30 text-amber-200 text-[10px] sm:text-xs font-semibold uppercase tracking-wider">
             Semi-Formal / Black-Tie
           </div>
         </div>

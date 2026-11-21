@@ -78,25 +78,26 @@ export const AtmosphereGallery: React.FC = () => {
           Glimpses of the refined evening aesthetic: festoon illumination, open dance floor acoustics, red carpet steps, and timeless camaraderie.
         </p>
 
-        {/* Mobile-Friendly Filter Pills: Horizontal Scroll with Touch Snapping */}
-        <div className="flex items-center justify-start sm:justify-center gap-2 mt-6 overflow-x-auto pb-2 scrollbar-none px-1">
+        {/* Mobile-Friendly Filter Pills: Fits comfortably on mobile and desktop */}
+        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mt-5 sm:mt-6 px-1">
           {[
-            { id: 'all', label: 'All', icon: <Filter className="w-3 h-3" /> },
-            { id: 'lawn', label: 'Evening Lawns', icon: <Moon className="w-3 h-3" /> },
-            { id: 'dance', label: 'Disco & Dance', icon: <Music className="w-3 h-3" /> },
-            { id: 'milestone', label: 'Milestones', icon: <Users className="w-3 h-3" /> },
+            { id: 'all', shortLabel: 'All', label: 'All Moments', icon: <Filter className="w-3 h-3" /> },
+            { id: 'lawn', shortLabel: 'Lawns', label: 'Evening Lawns', icon: <Moon className="w-3 h-3" /> },
+            { id: 'dance', shortLabel: 'Disco & DJ', label: 'Disco & Dance', icon: <Music className="w-3 h-3" /> },
+            { id: 'milestone', shortLabel: 'Memories', label: 'Milestones', icon: <Users className="w-3 h-3" /> },
           ].map((cat) => (
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold tracking-wider uppercase flex items-center gap-1.5 transition-all duration-200 shrink-0 ${
+              className={`px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-semibold tracking-wider uppercase flex items-center gap-1.5 transition-all duration-200 shrink-0 ${
                 activeCategory === cat.id
                   ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-400/50 shadow-sm'
                   : 'bg-slate-900/60 text-slate-400 border border-slate-800 hover:text-slate-200'
               }`}
             >
               {cat.icon}
-              <span>{cat.label}</span>
+              <span className="sm:hidden">{cat.shortLabel}</span>
+              <span className="hidden sm:inline">{cat.label}</span>
             </button>
           ))}
         </div>
