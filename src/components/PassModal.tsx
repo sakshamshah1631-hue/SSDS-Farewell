@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
 import { StudentRegistration, VenueConfig } from '../types';
+import { generateTicketSvg } from '../lib/ticketImage';
 import {
   X,
   Printer,
@@ -17,7 +18,7 @@ import {
   QrCode,
   BadgeCheck,
   Loader2,
-  Image as ImageIcon,
+  ExternalLink,
 } from 'lucide-react';
 
 interface PassModalProps {
@@ -34,12 +35,13 @@ export const PassModal: React.FC<PassModalProps> = ({
   onPassIssued,
 }) => {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [ticketImageUrl, setTicketImageUrl] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(true);
   const [isDownloadingTicket, setIsDownloadingTicket] = useState<boolean>(false);
   const ticketCardRef = useRef<HTMLDivElement>(null);
 
-  // Generate High-Scannability QR Code (Concise, Clean Optical Contrast, Standard Quiet Zone)
+  // Generate QR Code that redirects directly to the student's Ticket Image
   useEffect(() => {
     if (!student) return;
 
@@ -49,26 +51,21 @@ export const PassModal: React.FC<PassModalProps> = ({
 
     setIsGenerating(true);
 
-    // Standardized, concise payload that scans in 0.1s on EVERY phone camera (iPhone, Android, Google Lens)
-    const qrPayload = [
-      'SSDS FAREWELL 2026 VIP PASS',
-      `Pass ID: ${student.id}`,
-      `Student: ${student.fullName}`,
-      `Class: 10th (${student.division})`,
-      `Mobile: +91 ${student.mobile}`,
-      `Status: PAID & VERIFIED`,
-      `Entry: AUTHORIZED VIP ENTRY`,
-      `School: SSDS Ambegaon`,
-    ].join('\n');
+    // 1. Direct Web Link to view the ticket image online
+    // Works both on localhost and production (Render/Vercel) automatically
+    const baseUrl = window.location.origin;
+    const ticketDirectUrl = `${baseUrl}/?ticket=${encodeURIComponent(student.id)}`;
+    setTicketImageUrl(ticketDirectUrl);
 
-    // Generate with pure contrast (#000000 on #ffffff), 4 module margin (standard quiet zone), Level M (15% redundancy)
-    QRCode.toDataURL(qrPayload, {
+    // 2. Generate clean, highly-scannable QR matrix encoding the direct image/ticket URL
+    // Standard phone camera scanning a URL pops up "Open Link" and immediately renders the full ticket image!
+    QRCode.toDataURL(ticketDirectUrl, {
       width: 480,
-      margin: 4, // 4 modules required quiet zone for instant optical camera detection
-      errorCorrectionLevel: 'M', // Produces large, chunky dots that scan effortlessly from a distance
+      margin: 4,
+      errorCorrectionLevel: 'M',
       color: {
-        dark: '#000000', // Pure black for maximum optical contrast
-        light: '#ffffff', // Pure white
+        dark: '#000000',
+        light: '#ffffff',
       },
     })
       .then((url) => {
@@ -83,187 +80,30 @@ export const PassModal: React.FC<PassModalProps> = ({
 
   if (!student) return null;
 
-  // Direct Ticket Image Download using HTML5 Canvas Fallback (100% Reliable)
-  const downloadTicketViaCanvas = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1200;
-    canvas.height = 640;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Background gradient
-    const bgGradient = ctx.createLinearGradient(0, 0, 1200, 640);
-    bgGradient.addColorStop(0, '#040711');
-    bgGradient.addColorStop(0.5, '#0a1224');
-    bgGradient.addColorStop(1, '#040711');
-    ctx.fillStyle = bgGradient;
-    ctx.fillRect(0, 0, 1200, 640);
-
-    // Outer border (Champagne gold)
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(16, 16, 1168, 608);
-
-    // Inner subtle border
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(24, 24, 1152, 592);
-
-    // Header Background
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-    ctx.fillRect(24, 24, 1152, 120);
-
-    // School Crest Circle
-    ctx.fillStyle = 'rgba(245, 158, 11, 0.15)';
-    ctx.beginPath();
-    ctx.arc(84, 84, 40, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    ctx.fillStyle = '#fef08a';
-    ctx.font = 'bold 22px Cinzel, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('SSDS', 84, 91);
-
-    // School Title
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#fbbf24';
-    ctx.font = 'bold 16px sans-serif';
-    ctx.fillText('SINHAGAD SPRING DALE SCHOOL, AMBEGAON', 145, 68);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 30px Georgia, serif';
-    ctx.fillText('Class of 2026 Farewell Gala Pass', 145, 108);
-
-    // Pass ID Box on right
-    ctx.fillStyle = 'rgba(8, 51, 68, 0.9)';
-    ctx.fillRect(940, 48, 210, 72);
-    ctx.strokeStyle = 'rgba(34, 211, 238, 0.6)';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(940, 48, 210, 72);
-
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '11px monospace';
-    ctx.fillText('OFFICIAL PASS ID', 1045, 72);
-
-    ctx.fillStyle = '#67e8f9';
-    ctx.font = 'bold 20px monospace';
-    ctx.fillText(student.id, 1045, 102);
-
-    // Student Information Section
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '13px monospace';
-    ctx.fillText('AUTHORIZED STUDENT NAME', 60, 200);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 36px Georgia, serif';
-    ctx.fillText(student.fullName, 60, 245);
-
-    // Details Grid Boxes
-    // Class & Division Box
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
-    ctx.fillRect(60, 280, 360, 75);
-    ctx.strokeStyle = 'rgba(51, 65, 85, 0.8)';
-    ctx.strokeRect(60, 280, 360, 75);
-
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '12px monospace';
-    ctx.fillText('CLASS & DIVISION', 78, 308);
-
-    ctx.fillStyle = '#38bdf8';
-    ctx.font = 'bold 20px sans-serif';
-    ctx.fillText(`${student.className} — ${student.division}`, 78, 338);
-
-    // Verified Contact Box
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
-    ctx.fillRect(440, 280, 360, 75);
-    ctx.strokeStyle = 'rgba(51, 65, 85, 0.8)';
-    ctx.strokeRect(440, 280, 360, 75);
-
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '12px monospace';
-    ctx.fillText('VERIFIED CONTACT NUMBER', 458, 308);
-
-    ctx.fillStyle = '#f1f5f9';
-    ctx.font = 'bold 20px monospace';
-    ctx.fillText(`+91 ${student.mobile}`, 458, 338);
-
-    // Payment Verified Badge
-    ctx.fillStyle = 'rgba(6, 78, 59, 0.5)';
-    ctx.fillRect(60, 375, 740, 60);
-    ctx.strokeStyle = 'rgba(52, 211, 153, 0.5)';
-    ctx.strokeRect(60, 375, 740, 60);
-
-    ctx.fillStyle = '#34d399';
-    ctx.font = 'bold 16px sans-serif';
-    ctx.fillText('PAYMENT VERIFIED & OFFICIAL ADMISSION AUTHORIZED', 80, 411);
-
-    // Venue & Timing Note
-    const venueName = venueConfig.isTentative
-      ? 'Open-Air Lawn Destination (Ambegaon / South Pune)'
-      : (venueConfig.confirmedName || 'SSDS Ambegaon Lawns');
-
-    ctx.fillStyle = '#cbd5e1';
-    ctx.font = '14px sans-serif';
-    ctx.fillText(`Date: Saturday, 28 Feb 2026 • 05:30 PM Onwards`, 60, 475);
-    ctx.fillText(`Venue: ${venueName}`, 60, 505);
-
-    if (student.songRequest) {
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = 'italic 13px sans-serif';
-      ctx.fillText(`Song Request: "${student.songRequest}"`, 60, 535);
-    }
-
-    // QR Code Container on Right
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(840, 185, 290, 350);
-    ctx.strokeStyle = '#e2e8f0';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(840, 185, 290, 350);
-
-    // Draw QR image onto canvas
-    if (qrDataUrl) {
-      const qrImg = new Image();
-      qrImg.onload = () => {
-        ctx.drawImage(qrImg, 860, 205, 250, 250);
-
-        ctx.fillStyle = '#0f172a';
-        ctx.textAlign = 'center';
-        ctx.font = 'bold 12px monospace';
-        ctx.fillText('SCANNABLE VIP ENTRY QR', 985, 485);
-
-        ctx.fillStyle = '#059669';
-        ctx.font = 'bold 11px sans-serif';
-        ctx.fillText('Scan via phone camera', 985, 510);
-
-        // Download canvas
-        const link = document.createElement('a');
-        const safeName = student.fullName.replace(/\s+/g, '_');
-        link.download = `SSDS_VIP_Ticket_${safeName}_${student.division}_${student.id}.png`;
-        link.href = canvas.toDataURL('image/png', 1.0);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setIsDownloadingTicket(false);
-      };
-      qrImg.src = qrDataUrl;
-    } else {
-      setIsDownloadingTicket(false);
-    }
+  // Direct Ticket Image Download via SVG/Canvas
+  const downloadTicketAsFile = () => {
+    const svgStr = generateTicketSvg(student, venueConfig);
+    const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const safeName = student.fullName.replace(/\s+/g, '_');
+    link.href = url;
+    link.download = `SSDS_VIP_Ticket_${safeName}_${student.division}_${student.id}.svg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setIsDownloadingTicket(false);
   };
 
-  // Direct Ticket Download (Primary Handler using html2canvas with Canvas Fallback)
+  // Direct Ticket Download (Primary Handler using html2canvas with SVG/Canvas Fallback)
   const handleDirectDownloadTicket = async () => {
     setIsDownloadingTicket(true);
 
     try {
       if (ticketCardRef.current) {
         const canvas = await html2canvas(ticketCardRef.current, {
-          scale: 2.5, // 2.5x high-res retina quality
+          scale: 2.5,
           useCORS: true,
           backgroundColor: '#070b14',
           logging: false,
@@ -280,11 +120,11 @@ export const PassModal: React.FC<PassModalProps> = ({
         document.body.removeChild(link);
         setIsDownloadingTicket(false);
       } else {
-        downloadTicketViaCanvas();
+        downloadTicketAsFile();
       }
     } catch (err) {
-      console.warn('html2canvas notice, using direct canvas renderer:', err);
-      downloadTicketViaCanvas();
+      console.warn('html2canvas notice, using direct ticket renderer:', err);
+      downloadTicketAsFile();
     }
   };
 
@@ -292,14 +132,10 @@ export const PassModal: React.FC<PassModalProps> = ({
     window.print();
   };
 
-  const handleDownloadQR = () => {
-    if (!qrDataUrl) return;
-    const a = document.createElement('a');
-    a.href = qrDataUrl;
-    a.download = `SSDS_QR_Pass_${student.fullName.replace(/\s+/g, '_')}_${student.division}_${student.id}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+  const handleOpenTicketImageInNewTab = () => {
+    if (ticketImageUrl) {
+      window.open(ticketImageUrl, '_blank');
+    }
   };
 
   const handleCopyDetails = () => {
@@ -317,10 +153,11 @@ export const PassModal: React.FC<PassModalProps> = ({
       `Registered Mobile: +91 ${student.mobile}`,
       `Payment Status: VERIFIED & RECEIVED`,
       `Gate Clearance: AUTHORIZED VIP ENTRY`,
+      `Ticket Image Link: ${ticketImageUrl}`,
       `Date & Time: Saturday, 28 February 2026 • 05:30 PM Onwards`,
       `Venue: ${venueName}`,
       `----------------------------------------`,
-      `Please present this official VIP pass image or Pass ID at the gate desk.`,
+      `Present this pass image at the reception concierge desk.`,
     ].join('\n');
 
     navigator.clipboard.writeText(text).then(() => {
@@ -351,31 +188,33 @@ export const PassModal: React.FC<PassModalProps> = ({
             </div>
             <div>
               <span className="text-xs font-bold text-white block">
-                VIP Admission Ticket Ready for {student.fullName}
+                VIP Ticket Image Ready for {student.fullName}
               </span>
               <span className="text-[11px] text-slate-300">
-                Click Direct Download to save the complete ticket pass image and send it via WhatsApp.
+                Scanning the QR code now directly opens this student&apos;s ticket image on their phone.
               </span>
             </div>
           </div>
 
-          <button
-            onClick={handleDirectDownloadTicket}
-            disabled={isDownloadingTicket}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-950/60 shrink-0 border border-amber-300"
-          >
-            {isDownloadingTicket ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
-                <span>Generating Image...</span>
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4 text-slate-950" />
-                <span>Direct Download Ticket</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={handleDirectDownloadTicket}
+              disabled={isDownloadingTicket}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-950/60 shrink-0 border border-amber-300"
+            >
+              {isDownloadingTicket ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                  <span>Generating Image...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 text-slate-950" />
+                  <span>Direct Download Ticket</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* PRINTABLE / CAPTURABLE TICKET CARD */}
@@ -501,7 +340,7 @@ export const PassModal: React.FC<PassModalProps> = ({
               </div>
             </div>
 
-            {/* REAL, ULTRA-SCANNABLE QR CODE SECTION */}
+            {/* REAL SCANNABLE QR CODE LINKED DIRECTLY TO TICKET IMAGE */}
             <div className="flex flex-col items-center justify-center p-3.5 sm:p-4 rounded-2xl bg-midnight-950 border border-slate-800 text-center">
               
               {/* White Quiet-Zone Container for Instant Optical Camera Detection */}
@@ -514,7 +353,9 @@ export const PassModal: React.FC<PassModalProps> = ({
                   <img
                     src={qrDataUrl}
                     alt={`Scannable QR Pass for ${student.fullName}`}
-                    className="w-36 h-36 sm:w-40 sm:h-40 object-contain block select-none"
+                    className="w-36 h-36 sm:w-40 sm:h-40 object-contain block select-none cursor-pointer"
+                    onClick={handleOpenTicketImageInNewTab}
+                    title="Click to open direct ticket image"
                   />
                 ) : (
                   <div className="w-36 h-36 sm:w-40 sm:h-40 flex items-center justify-center text-xs text-slate-600">
@@ -524,11 +365,11 @@ export const PassModal: React.FC<PassModalProps> = ({
               </div>
 
               <span className="text-[10px] font-mono text-slate-300 tracking-wider uppercase block font-semibold">
-                Scannable VIP Entry QR
+                Scan to Open Ticket Image
               </span>
               <span className="text-[9px] text-emerald-400 font-semibold flex items-center justify-center gap-1 mt-1">
                 <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                Scan with any phone camera
+                Opens ticket image on any phone
               </span>
             </div>
 
@@ -552,13 +393,12 @@ export const PassModal: React.FC<PassModalProps> = ({
           {/* Secondary Options */}
           <div className="flex items-center gap-2">
             <button
-              onClick={handleDownloadQR}
-              disabled={!qrDataUrl}
-              className="px-3 py-2 rounded-xl glass-panel text-slate-300 hover:text-white border border-slate-800 text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-all"
-              title="Download only the standalone QR image"
+              onClick={handleOpenTicketImageInNewTab}
+              className="px-3 py-2 rounded-xl glass-panel text-cyan-300 hover:text-white border border-slate-800 text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-all"
+              title="Open ticket image in new browser tab"
             >
-              <QrCode className="w-3.5 h-3.5 text-cyan-400" />
-              <span>QR Only</span>
+              <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Preview Image</span>
             </button>
 
             <button
@@ -573,7 +413,7 @@ export const PassModal: React.FC<PassModalProps> = ({
               ) : (
                 <>
                   <Share2 className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Copy Text</span>
+                  <span>Copy Link & Text</span>
                 </>
               )}
             </button>
@@ -586,7 +426,7 @@ export const PassModal: React.FC<PassModalProps> = ({
               className="px-4 py-2.5 rounded-xl glass-panel text-slate-200 hover:text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-slate-700"
             >
               <Printer className="w-4 h-4 text-cyan-400" />
-              <span>Print Pass</span>
+              <span>Print</span>
             </button>
 
             <button
@@ -601,7 +441,7 @@ export const PassModal: React.FC<PassModalProps> = ({
                 </>
               ) : (
                 <>
-                  <ImageIcon className="w-4 h-4 text-slate-950" />
+                  <Download className="w-4 h-4 text-slate-950" />
                   <span>Direct Download Ticket</span>
                 </>
               )}

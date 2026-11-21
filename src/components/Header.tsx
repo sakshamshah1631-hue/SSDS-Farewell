@@ -8,8 +8,6 @@ import {
   Lock,
   Menu,
   X,
-  Volume2,
-  VolumeX,
   Award,
   Sparkles,
   ChevronRight,
@@ -27,53 +25,6 @@ export const Header: React.FC<HeaderProps> = ({
   registeredCount,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  const audioContextRef = React.useRef<AudioContext | null>(null);
-  const oscillatorNodeRef = React.useRef<{ osc1: OscillatorNode; osc2: OscillatorNode; gain: GainNode } | null>(null);
-
-  const toggleAtmosphereAudio = () => {
-    try {
-      if (!isAudioPlaying) {
-        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-        const ctx = new AudioCtx();
-        audioContextRef.current = ctx;
-
-        const gainNode = ctx.createGain();
-        gainNode.gain.setValueAtTime(0.02, ctx.currentTime);
-        gainNode.connect(ctx.destination);
-
-        const osc1 = ctx.createOscillator();
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(220, ctx.currentTime);
-
-        const osc2 = ctx.createOscillator();
-        osc2.type = 'triangle';
-        osc2.frequency.setValueAtTime(329.63, ctx.currentTime);
-
-        osc1.connect(gainNode);
-        osc2.connect(gainNode);
-
-        osc1.start();
-        osc2.start();
-
-        oscillatorNodeRef.current = { osc1, osc2, gain: gainNode };
-        setIsAudioPlaying(true);
-      } else {
-        if (oscillatorNodeRef.current) {
-          oscillatorNodeRef.current.osc1.stop();
-          oscillatorNodeRef.current.osc2.stop();
-          oscillatorNodeRef.current = null;
-        }
-        if (audioContextRef.current) {
-          audioContextRef.current.close();
-          audioContextRef.current = null;
-        }
-        setIsAudioPlaying(false);
-      }
-    } catch {
-      setIsAudioPlaying(false);
-    }
-  };
 
   const navigateToSection = (sectionId: string) => {
     if (activeView !== 'home') {
@@ -90,68 +41,91 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-2xl bg-[#050811]/90 border-b border-cyan-500/15 transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-[#050811]/90 border-b border-slate-800/80 transition-all duration-300">
+      
+      {/* Topmost Institutional Thin Bar */}
+      <div className="bg-gradient-to-r from-midnight-950 via-slate-900 to-midnight-950 px-4 sm:px-8 py-1.5 border-b border-cyan-500/10 hidden sm:flex items-center justify-between text-[11px] text-slate-400 font-mono tracking-wider">
+        <div className="flex items-center space-x-3">
+          <span className="text-amber-400 font-semibold tracking-widest uppercase">SSDS AMBEGAON</span>
+          <span className="text-slate-600">/</span>
+          <span>SINHAGAD SPRING DALE SENIOR SECONDARY</span>
+        </div>
+
+        <div className="flex items-center space-x-4 text-slate-400">
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            <strong className="text-slate-300">Class 10 (Div A–G)</strong>
+          </span>
+          <span className="text-slate-600">|</span>
+          <span className="text-amber-300 font-medium">Batch of 2026 Farewell Gala</span>
+        </div>
+      </div>
+
+      {/* Main Navigation Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           
-          {/* School Monogram & Identity */}
-          <button
-            onClick={() => {
-              setActiveView('home');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="flex items-center space-x-2.5 sm:space-x-3.5 group text-left focus:outline-none"
-            aria-label="Sinhagad Spring Dale School Farewell Home"
+          {/* Logo / Monogram Brand */}
+          <div
+            onClick={() => setActiveView('home')}
+            className="flex items-center space-x-3 cursor-pointer group"
           >
-            <div className="relative flex items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-full border border-amber-400/50 bg-gradient-to-br from-amber-400/15 via-midnight-850 to-midnight-950 shadow-inner group-hover:border-amber-400 transition-colors shrink-0">
-              <span className="font-cinzel text-[11px] sm:text-xs font-bold tracking-widest text-amber-300">
-                SSDS
-              </span>
-              <div className="absolute inset-0 rounded-full border border-cyan-400/25 scale-110 pointer-events-none" />
+            {/* Custom Monogram Badge (Strictly NO Purple - Gold & Midnight Navy) */}
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border border-amber-400/40 bg-amber-400/10 flex items-center justify-center text-amber-300 font-bold font-cinzel text-xs sm:text-sm shadow-lg shadow-amber-950/40 group-hover:border-amber-400/80 group-hover:scale-105 transition-all">
+              SSDS
             </div>
 
             <div className="flex flex-col">
-              <span className="font-cinzel text-xs sm:text-sm font-semibold tracking-wider text-slate-100 group-hover:text-cyan-300 transition-colors line-clamp-1">
-                SSDS AMBEGAON
+              <span className="font-editorial-serif text-base sm:text-lg font-bold tracking-tight text-white group-hover:text-cyan-200 transition-colors">
+                Spring Dale School
               </span>
-              <span className="text-[9px] sm:text-[10px] tracking-widest uppercase font-medium text-amber-400/90 truncate max-w-[170px] sm:max-w-none">
-                Class of 2026 Farewell Gala
+              <span className="text-[10px] sm:text-[11px] uppercase tracking-widest text-slate-400 font-mono">
+                Ambegaon, Pune • Class of 2026
               </span>
             </div>
-          </button>
+          </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-7">
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center space-x-7 text-xs font-medium uppercase tracking-widest text-slate-300">
             <button
-              onClick={() => navigateToSection('hero')}
-              className={`text-xs font-medium tracking-wider uppercase transition-colors ${
-                activeView === 'home' ? 'text-cyan-300' : 'text-slate-400 hover:text-slate-200'
+              onClick={() => setActiveView('home')}
+              className={`hover:text-cyan-300 transition-colors py-1 relative ${
+                activeView === 'home' ? 'text-cyan-300 font-semibold' : ''
               }`}
             >
-              Experience
+              Overview
+              {activeView === 'home' && (
+                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full" />
+              )}
             </button>
+
             <button
               onClick={() => navigateToSection('itinerary')}
-              className="text-xs font-medium tracking-wider uppercase text-slate-400 hover:text-cyan-300 transition-colors"
+              className="hover:text-cyan-300 transition-colors py-1"
             >
               Itinerary
             </button>
+
             <button
               onClick={() => navigateToSection('venue')}
-              className="text-xs font-medium tracking-wider uppercase text-slate-400 hover:text-cyan-300 transition-colors flex items-center gap-1.5"
+              className="hover:text-cyan-300 transition-colors py-1 flex items-center gap-1.5"
             >
-              <MapPin className="w-3 h-3 text-amber-400" />
-              Venue Status
+              <span>Destination</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-300 border border-amber-400/30">
+                Tentative
+              </span>
             </button>
+
             <button
-              onClick={() => navigateToSection('gallery')}
-              className="text-xs font-medium tracking-wider uppercase text-slate-400 hover:text-cyan-300 transition-colors"
+              onClick={() => navigateToSection('atmosphere')}
+              className="hover:text-cyan-300 transition-colors py-1"
             >
               Atmosphere
             </button>
+
             <button
               onClick={() => navigateToSection('reflections')}
-              className="text-xs font-medium tracking-wider uppercase text-slate-400 hover:text-cyan-300 transition-colors"
+              className="hover:text-cyan-300 transition-colors py-1"
             >
               Reflections
             </button>
@@ -159,19 +133,6 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Desktop Actions */}
           <div className="hidden sm:flex items-center space-x-3.5">
-            <button
-              onClick={toggleAtmosphereAudio}
-              title={isAudioPlaying ? 'Mute ambient resonance' : 'Play ambient resonance'}
-              className="p-2.5 rounded-full border border-slate-700/60 bg-slate-900/60 text-slate-400 hover:text-cyan-300 hover:border-cyan-500/30 transition-all text-xs"
-              aria-label="Toggle ambient atmospheric audio"
-            >
-              {isAudioPlaying ? (
-                <Volume2 className="w-4 h-4 text-cyan-400 animate-pulse" />
-              ) : (
-                <VolumeX className="w-4 h-4" />
-              )}
-            </button>
-
             <button
               onClick={() => setActiveView('admin')}
               className={`px-3 py-2 rounded-lg text-xs font-medium tracking-wider flex items-center gap-1.5 border transition-all ${
@@ -200,20 +161,8 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Mobile Right Bar: Audio + Register Quick Pill + Drawer Toggle */}
+          {/* Mobile Right Bar: Register Quick Pill + Drawer Toggle */}
           <div className="flex sm:hidden items-center space-x-2">
-            <button
-              onClick={toggleAtmosphereAudio}
-              className="p-2 rounded-lg border border-slate-800 bg-slate-900/80 text-slate-400 active:text-cyan-300 text-xs"
-              aria-label="Toggle audio"
-            >
-              {isAudioPlaying ? (
-                <Volume2 className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-              ) : (
-                <VolumeX className="w-3.5 h-3.5" />
-              )}
-            </button>
-
             <button
               onClick={() => setActiveView('register')}
               className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-cyan-950/50 border border-cyan-400/40"
@@ -233,54 +182,82 @@ export const Header: React.FC<HeaderProps> = ({
               {mobileMenuOpen ? <X className="w-4 h-4 text-cyan-300" /> : <Menu className="w-4 h-4" />}
             </button>
           </div>
+
         </div>
       </div>
 
-      {/* Luxury Full Mobile Navigation Drawer */}
+      {/* Mobile Slide-down Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="sm:hidden border-b border-cyan-500/20 bg-[#050811]/98 backdrop-blur-2xl px-4 pt-3 pb-6 space-y-4 animate-fadeIn shadow-2xl">
-          
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800/80 text-[11px] text-slate-400">
-            <span className="font-cinzel text-amber-300 font-semibold tracking-wider">
-              NAVIGATION
-            </span>
-            <span className="font-mono text-[10px] text-cyan-400">
-              DIV A – DIV G
-            </span>
+        <div className="sm:hidden bg-[#070b14]/98 border-b border-slate-800 px-4 pt-3 pb-6 space-y-3.5 animate-fadeIn">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-slate-400 px-1 border-b border-slate-800/80 pb-2 flex items-center justify-between">
+            <span>Navigation Menu</span>
+            <span className="text-cyan-400">Class of 2026</span>
           </div>
 
-          <div className="grid grid-cols-1 gap-1.5">
-            {[
-              { id: 'hero', label: 'Event Overview', icon: <Sparkles className="w-4 h-4 text-cyan-400" /> },
-              { id: 'itinerary', label: 'Evening Itinerary', icon: <Calendar className="w-4 h-4 text-cyan-400" /> },
-              { id: 'venue', label: 'Venue Coordinates (Tentative)', icon: <MapPin className="w-4 h-4 text-amber-400" /> },
-              { id: 'gallery', label: 'Atmosphere & Lawn Disco', icon: <ImageIcon className="w-4 h-4 text-cyan-400" /> },
-              { id: 'reflections', label: 'Class 10 Reflections', icon: <Award className="w-4 h-4 text-amber-400" /> },
-            ].map((item) => (
-              <button
-                key={item.id}
-                onClick={() => navigateToSection(item.id)}
-                className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-midnight-950/60 border border-slate-800/60 text-slate-200 active:bg-cyan-950/40 text-left text-xs uppercase tracking-wider group transition-all"
-              >
-                <div className="flex items-center gap-2.5">
-                  {item.icon}
-                  <span>{item.label}</span>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-cyan-300 transition-colors" />
-              </button>
-            ))}
+          <div className="grid grid-cols-1 gap-1 text-sm font-medium">
+            <button
+              onClick={() => {
+                setActiveView('home');
+                setMobileMenuOpen(false);
+              }}
+              className={`flex items-center justify-between p-2.5 rounded-xl transition-colors ${
+                activeView === 'home'
+                  ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
+                  : 'text-slate-300 hover:bg-slate-900/80'
+              }`}
+            >
+              <span>Overview</span>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </button>
+
+            <button
+              onClick={() => navigateToSection('itinerary')}
+              className="flex items-center justify-between p-2.5 rounded-xl text-slate-300 hover:bg-slate-900/80 transition-colors"
+            >
+              <span>Itinerary</span>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </button>
+
+            <button
+              onClick={() => navigateToSection('venue')}
+              className="flex items-center justify-between p-2.5 rounded-xl text-slate-300 hover:bg-slate-900/80 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <span>Destination & Venue</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30 font-mono">
+                  Tentative
+                </span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </button>
+
+            <button
+              onClick={() => navigateToSection('atmosphere')}
+              className="flex items-center justify-between p-2.5 rounded-xl text-slate-300 hover:bg-slate-900/80 transition-colors"
+            >
+              <span>Atmosphere & Gallery</span>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </button>
+
+            <button
+              onClick={() => navigateToSection('reflections')}
+              className="flex items-center justify-between p-2.5 rounded-xl text-slate-300 hover:bg-slate-900/80 transition-colors"
+            >
+              <span>Cherished Memories</span>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </button>
           </div>
 
-          <div className="pt-2 flex flex-col space-y-2">
+          <div className="pt-2 border-t border-slate-800/80 flex flex-col gap-2">
             <button
               onClick={() => {
                 setActiveView('register');
                 setMobileMenuOpen(false);
               }}
-              className="w-full py-3.5 rounded-xl font-bold text-xs tracking-wider uppercase bg-gradient-to-r from-cyan-600 via-blue-600 to-cyan-500 text-white shadow-lg shadow-cyan-950/50 flex items-center justify-center gap-2 border border-cyan-400/40 active:scale-[0.99] transition-transform"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-cyan-950/60"
             >
-              <Ticket className="w-4 h-4 text-cyan-200" />
-              <span>Register for Student Pass ({registeredCount} Registered)</span>
+              <Ticket className="w-4 h-4" />
+              <span>Enroll for VIP Pass ({registeredCount} Registered)</span>
             </button>
 
             <button
@@ -288,18 +265,15 @@ export const Header: React.FC<HeaderProps> = ({
                 setActiveView('admin');
                 setMobileMenuOpen(false);
               }}
-              className="w-full py-2.5 rounded-xl text-center text-xs tracking-wider uppercase border border-slate-800 bg-slate-900/40 text-slate-400 active:text-slate-200 flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl bg-midnight-950 border border-slate-800 text-slate-400 text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-1.5"
             >
               <Lock className="w-3.5 h-3.5 text-amber-400" />
-              <span>Faculty & Admin Portal</span>
+              <span>Admin Management Gate</span>
             </button>
-          </div>
-
-          <div className="pt-2 text-center text-[10px] text-slate-500 font-mono">
-            Sinhagad Spring Dale School, Ambegaon • Batch of 2026
           </div>
         </div>
       )}
+
     </header>
   );
 };
