@@ -1,11 +1,12 @@
 import { StudentRegistration, VenueConfig, Division } from '../types';
+import { supabase } from './supabase';
 
 const STORAGE_KEY_REGISTRATIONS = 'ssds_farewell_registrations_v2';
 const STORAGE_KEY_VENUE = 'ssds_farewell_venue_config_v2';
 const STORAGE_KEY_AUTH = 'ssds_farewell_admin_auth_v1';
 
 // Seed sample students from Sinhagad Spring Dale School Ambegaon (Div A through Div G)
-const INITIAL_REGISTRATIONS: StudentRegistration[] = [
+export const INITIAL_REGISTRATIONS: StudentRegistration[] = [
   {
     id: 'SSDS-X-2026-1041',
     fullName: 'Aarav Sachin Deshmukh',
@@ -156,9 +157,49 @@ export const DEFAULT_VENUE_CONFIG: VenueConfig = {
   lastUpdated: new Date().toISOString(),
 };
 
-// --- Storage API ---
+// Database Row Mapping
+interface DbRegistrationRow {
+  id: string;
+  full_name: string;
+  mobile: string;
+  class_name: string;
+  division: Division;
+  song_request?: string | null;
+  favorite_memory?: string | null;
+  registered_at: string;
+  status: 'Confirmed' | 'Pending';
+}
 
-export function getRegistrations(): StudentRegistration[] {
+function mapRowToStudent(row: DbRegistrationRow): StudentRegistration {
+  return {
+    id: row.id,
+    fullName: row.full_name,
+    mobile: row.mobile,
+    className: row.class_name || 'Class 10',
+    division: row.division,
+    songRequest: row.song_request || undefined,
+    favoriteMemory: row.favorite_memory || undefined,
+    registeredAt: row.registered_at,
+    status: row.status || 'Confirmed',
+  };
+}
+
+function mapStudentToRow(student: StudentRegistration): DbRegistrationRow {
+  return {
+    id: student.id,
+    full_name: student.fullName,
+    mobile: student.mobile,
+    class_name: student.className,
+    division: student.division,
+    song_request: student.songRequest || null,
+    favorite_memory: student.favoriteMemory || null,
+    registered_at: student.registeredAt,
+    status: student.status,
+  };
+}
+
+// Synchronous local storage reader
+export function getLocalRegistrations(): StudentRegistration[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_REGISTRATIONS);
     if (!raw) {
@@ -172,46 +213,182 @@ export function getRegistrations(): StudentRegistration[] {
   }
 }
 
-export function saveRegistration(student: Omit<StudentRegistration, 'id' | 'registeredAt' | 'status'>): StudentRegistration {
-  const current = getRegistrations();
-  
-  // Check if mobile already exists
-  const existing = current.find((r) => r.mobile.replace(/\D/g, '') === student.mobile.replace(/\D/g, ''));
+export function saveLocalRegistrations(list: StudentRegistration[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_REGISTRATIONS, JSON.stringify(list));
+  } catch {
+    // ignore
+  }
+}
+
+// Asynchronously Fetch from Supabase (with automatic local sync fallback)
+export async function fetchRegistrationsFromSupabase(): Promise<StudentRegistration[]> {
+  try {
+    const { data, error } = await supabase
+      .from('farewell_registrations')
+      .select('*')
+      .order('registered_at', { ascending: false });
+
+    if (error) {
+      console.warn('Supabase fetch error, using local database cache:', error.message);
+      return getLocalRegistrations();
+    }
+
+    if (data && data.length > 0) {
+      const mapped = data.map(mapRowToStudent);
+      saveLocalRegistrations(mapped);
+      return mapped;
+    }
+
+    // If Supabase table is empty, seed it with the initial students
+    const local = getLocalRegistrations();
+    syncLocalToSupabase(local).catch(() => {});
+    return local;
+  } catch (err) {
+    console.warn('Network or Supabase exception, using local database cache:', err);
+    return getLocalRegistrations();
+  }
+}
+
+// Sync all local records up to Supabase
+export async function syncLocalToSupabase(list: StudentRegistration[]): Promise<void> {
+  try {
+    const rows = list.map(mapStudentToRow);
+    const { error } = await supabase
+      .from('farewell_registrations')
+      .upsert(rows, { onConflict: 'id' });
+
+    if (error) {
+      console.warn('Supabase bulk upsert notice:', error.message);
+    }
+  } catch {
+    // non-fatal
+  }
+}
+
+// Standard synchronous getter for immediate rendering
+export function getRegistrations(): StudentRegistration[] {
+  return getLocalRegistrations();
+}
+
+// Unified Save Registration (writes to Supabase & local cache)
+export async function saveRegistrationAsync(
+  student: Omit<StudentRegistration, 'id' | 'registeredAt' | 'status'>
+): Promise<StudentRegistration> {
+  const current = getLocalRegistrations();
+  const cleanMobile = student.mobile.replace(/\D/g, '');
+
+  const existing = current.find((r) => r.mobile.replace(/\D/g, '') === cleanMobile);
   if (existing) {
-    throw new Error(`A registration with mobile number +91 ${student.mobile} is already registered under ID ${existing.id}.`);
+    throw new Error(`A registration with mobile +91 ${cleanMobile} is already registered under ID ${existing.id}.`);
   }
 
   const randomNum = Math.floor(1000 + Math.random() * 9000);
   const newStudent: StudentRegistration = {
     ...student,
+    mobile: cleanMobile,
+    id: `SSDS-X-2026-${randomNum}`,
+    registeredAt: new Date().toISOString(),
+    status: 'Confirmed',
+  };
+
+  // 1. Immediately cache locally
+  const updated = [newStudent, ...current];
+  saveLocalRegistrations(updated);
+
+  // 2. Save directly to Supabase cloud
+  try {
+    const row = mapStudentToRow(newStudent);
+    const { error } = await supabase.from('farewell_registrations').insert([row]);
+    if (error) {
+      console.warn('Supabase cloud insert notice (stored locally):', error.message);
+    }
+  } catch (cloudErr) {
+    console.warn('Supabase cloud unreachable (stored locally):', cloudErr);
+  }
+
+  return newStudent;
+}
+
+// Synchronous wrapper used by forms
+export function saveRegistration(
+  student: Omit<StudentRegistration, 'id' | 'registeredAt' | 'status'>
+): StudentRegistration {
+  const current = getLocalRegistrations();
+  const cleanMobile = student.mobile.replace(/\D/g, '');
+
+  const existing = current.find((r) => r.mobile.replace(/\D/g, '') === cleanMobile);
+  if (existing) {
+    throw new Error(`A registration with mobile +91 ${cleanMobile} is already registered under ID ${existing.id}.`);
+  }
+
+  const randomNum = Math.floor(1000 + Math.random() * 9000);
+  const newStudent: StudentRegistration = {
+    ...student,
+    mobile: cleanMobile,
     id: `SSDS-X-2026-${randomNum}`,
     registeredAt: new Date().toISOString(),
     status: 'Confirmed',
   };
 
   const updated = [newStudent, ...current];
-  localStorage.setItem(STORAGE_KEY_REGISTRATIONS, JSON.stringify(updated));
+  saveLocalRegistrations(updated);
+
+  // Background cloud sync
+  saveRegistrationAsync(student).catch(() => {});
+
   return newStudent;
 }
 
+// Update student record (local + Supabase)
 export function updateRegistration(id: string, updates: Partial<StudentRegistration>): StudentRegistration {
-  const current = getRegistrations();
+  const current = getLocalRegistrations();
   const index = current.findIndex((r) => r.id === id);
   if (index === -1) {
     throw new Error('Student record not found.');
   }
+
   const updatedStudent = { ...current[index], ...updates };
   current[index] = updatedStudent;
-  localStorage.setItem(STORAGE_KEY_REGISTRATIONS, JSON.stringify(current));
+  saveLocalRegistrations(current);
+
+  // Background cloud sync
+  supabase
+    .from('farewell_registrations')
+    .update({
+      full_name: updatedStudent.fullName,
+      mobile: updatedStudent.mobile,
+      division: updatedStudent.division,
+      song_request: updatedStudent.songRequest || null,
+      favorite_memory: updatedStudent.favoriteMemory || null,
+    })
+    .eq('id', id)
+    .then(({ error }) => {
+      if (error) console.warn('Supabase update notice:', error.message);
+    })
+    .catch(() => {});
+
   return updatedStudent;
 }
 
+// Delete student record (local + Supabase)
 export function deleteRegistration(id: string): void {
-  const current = getRegistrations();
+  const current = getLocalRegistrations();
   const filtered = current.filter((r) => r.id !== id);
-  localStorage.setItem(STORAGE_KEY_REGISTRATIONS, JSON.stringify(filtered));
+  saveLocalRegistrations(filtered);
+
+  // Background cloud delete
+  supabase
+    .from('farewell_registrations')
+    .delete()
+    .eq('id', id)
+    .then(({ error }) => {
+      if (error) console.warn('Supabase delete notice:', error.message);
+    })
+    .catch(() => {});
 }
 
+// Venue Storage (local + Supabase)
 export function getVenueConfig(): VenueConfig {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_VENUE);
@@ -225,6 +402,40 @@ export function getVenueConfig(): VenueConfig {
   }
 }
 
+export async function fetchVenueFromSupabase(): Promise<VenueConfig> {
+  try {
+    const { data, error } = await supabase
+      .from('farewell_venue')
+      .select('*')
+      .eq('id', 'current_venue')
+      .single();
+
+    if (error || !data) {
+      return getVenueConfig();
+    }
+
+    const config: VenueConfig = {
+      isTentative: data.is_tentative,
+      statusBadge: data.status_badge || (data.is_tentative ? 'VENUE: TENTATIVE (TO BE ANNOUNCED SOON)' : 'VENUE: OFFICIAL DESTINATION CONFIRMED'),
+      title: data.title || DEFAULT_VENUE_CONFIG.title,
+      announcementDate: DEFAULT_VENUE_CONFIG.announcementDate,
+      locationArea: data.location_area || DEFAULT_VENUE_CONFIG.locationArea,
+      tentativeDescription: data.tentative_description || DEFAULT_VENUE_CONFIG.tentativeDescription,
+      confirmedName: data.confirmed_name || DEFAULT_VENUE_CONFIG.confirmedName,
+      confirmedAddress: data.confirmed_address || DEFAULT_VENUE_CONFIG.confirmedAddress,
+      confirmedLandmark: data.confirmed_landmark || DEFAULT_VENUE_CONFIG.confirmedLandmark,
+      confirmedGpsUrl: data.confirmed_gps_url || DEFAULT_VENUE_CONFIG.confirmedGpsUrl,
+      dressCodeNote: data.dress_code_note || DEFAULT_VENUE_CONFIG.dressCodeNote,
+      lastUpdated: data.updated_at || new Date().toISOString(),
+    };
+
+    localStorage.setItem(STORAGE_KEY_VENUE, JSON.stringify(config));
+    return config;
+  } catch {
+    return getVenueConfig();
+  }
+}
+
 export function updateVenueConfig(updates: Partial<VenueConfig>): VenueConfig {
   const current = getVenueConfig();
   const updated: VenueConfig = {
@@ -233,6 +444,29 @@ export function updateVenueConfig(updates: Partial<VenueConfig>): VenueConfig {
     lastUpdated: new Date().toISOString(),
   };
   localStorage.setItem(STORAGE_KEY_VENUE, JSON.stringify(updated));
+
+  // Sync to Supabase
+  supabase
+    .from('farewell_venue')
+    .upsert({
+      id: 'current_venue',
+      is_tentative: updated.isTentative,
+      status_badge: updated.statusBadge,
+      title: updated.title,
+      location_area: updated.locationArea,
+      tentative_description: updated.tentativeDescription,
+      confirmed_name: updated.confirmedName || null,
+      confirmed_address: updated.confirmedAddress || null,
+      confirmed_landmark: updated.confirmedLandmark || null,
+      confirmed_gps_url: updated.confirmedGpsUrl || null,
+      dress_code_note: updated.dressCodeNote,
+      updated_at: new Date().toISOString(),
+    })
+    .then(({ error }) => {
+      if (error) console.warn('Supabase venue update notice:', error.message);
+    })
+    .catch(() => {});
+
   return updated;
 }
 
@@ -248,7 +482,6 @@ export function checkAdminAuth(): boolean {
 export function loginAdmin(password: string, email: string): boolean {
   const cleanEmail = email.trim().toLowerCase();
   const cleanPass = password.trim();
-  // Supported demo credentials
   if (
     (cleanEmail === 'admin@ssds.edu' && cleanPass === 'farewell2026') ||
     (cleanEmail === 'admin' && cleanPass === 'farewell2026') ||

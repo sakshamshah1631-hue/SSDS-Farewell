@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ActiveView, StudentRegistration, VenueConfig } from './types';
-import { getRegistrations, getVenueConfig } from './lib/storage';
+import {
+  getRegistrations,
+  getVenueConfig,
+  fetchRegistrationsFromSupabase,
+  fetchVenueFromSupabase,
+} from './lib/storage';
 import { AtmosphericBackground } from './components/AtmosphericBackground';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
@@ -19,6 +24,30 @@ export const App: React.FC = () => {
   const [venueConfig, setVenueConfig] = useState<VenueConfig>(() => getVenueConfig());
   const [registrations, setRegistrations] = useState<StudentRegistration[]>(() => getRegistrations());
   const [passModalStudent, setPassModalStudent] = useState<StudentRegistration | null>(null);
+
+  // Initial cloud sync with Supabase on mount
+  useEffect(() => {
+    let isMounted = true;
+    fetchRegistrationsFromSupabase()
+      .then((cloudStudents) => {
+        if (isMounted && cloudStudents && cloudStudents.length > 0) {
+          setRegistrations(cloudStudents);
+        }
+      })
+      .catch(() => {});
+
+    fetchVenueFromSupabase()
+      .then((cloudVenue) => {
+        if (isMounted && cloudVenue) {
+          setVenueConfig(cloudVenue);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Sync scroll on view change
   useEffect(() => {
