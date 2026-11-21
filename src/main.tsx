@@ -17,7 +17,7 @@ class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Sahyadri Glow UI Error:', error, errorInfo);
+    console.error('SSDS Farewell UI Error:', error, errorInfo);
   }
 
   render() {
@@ -30,22 +30,22 @@ class ErrorBoundary extends React.Component<
           alignItems: 'center',
           justifyContent: 'center',
           padding: '24px',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          background: '#f7f3ee',
-          color: '#2a2421',
+          fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
+          background: '#070b14',
+          color: '#f8fafc',
           textAlign: 'center'
         }}>
           <h1 style={{ fontSize: '1.75rem', marginBottom: '12px', fontWeight: 600 }}>
-            Sahyadri Glow
+            Sinhagad Spring Dale School, Ambegaon
           </h1>
-          <p style={{ maxWidth: '480px', marginBottom: '20px', lineHeight: 1.6, color: '#685950' }}>
+          <p style={{ maxWidth: '480px', marginBottom: '20px', lineHeight: 1.6, color: '#94a3b8' }}>
             We encountered a temporary loading error. Please refresh or try again.
           </p>
           <button
             onClick={() => window.location.reload()}
             style={{
               padding: '10px 24px',
-              backgroundColor: '#2a2421',
+              backgroundColor: '#0284c7',
               color: '#ffffff',
               border: 'none',
               borderRadius: '8px',
@@ -54,7 +54,7 @@ class ErrorBoundary extends React.Component<
               fontSize: '0.95rem'
             }}
           >
-            Refresh Page
+            Reload Event Portal
           </button>
         </div>
       );

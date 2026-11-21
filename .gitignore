@@ -22,9 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-.env
 
 # Large exports and archives
 *.zip
 sahyadri_glow_complete_code.txt
 .bolt/
+.old_frames_backup*
