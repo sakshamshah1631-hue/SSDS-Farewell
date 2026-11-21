@@ -25,6 +25,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['lucide-react', 'react', 'react-dom', 'qrcode'],
+    include: ['lucide-react', 'react', 'react-dom', 'qrcode', 'html2canvas'],
   },
 });

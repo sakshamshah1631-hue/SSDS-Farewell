@@ -34,6 +34,7 @@ import {
   Sparkles,
   CreditCard,
   Check,
+  Download,
 } from 'lucide-react';
 
 interface AdminViewProps {
@@ -847,6 +848,17 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       {/* Actions */}
                       <td className="py-3.5 px-3 sm:px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
+                          {/* Direct Ticket Pass Modal / Download */}
+                          {isPaid && (
+                            <button
+                              onClick={() => handleGivePass(student)}
+                              title="Direct View & Download VIP Ticket Pass"
+                              className="p-1.5 rounded-lg text-amber-300 hover:text-amber-200 hover:bg-amber-400/20 transition-colors"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                          )}
+
                           {/* Edit Record */}
                           <button
                             onClick={() => handleOpenEdit(student)}
